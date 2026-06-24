@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarEdge 派工系統</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;font-size:15px;color:#1a1a1a;background:#f5f5f3;min-height:100vh}
+.app{max-width:980px;margin:0 auto;padding:1.5rem;min-height:100vh}
+.hidden{display:none!important}
+.card{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.card-sm{padding:1rem}
+h2{font-size:18px;font-weight:600;margin-bottom:1rem}
+h3{font-size:15px;font-weight:600;margin-bottom:.75rem;color:#444}
+label{display:block;font-size:13px;color:#666;margin-bottom:4px;margin-top:12px}
+input,select,textarea{width:100%;border:1px solid #d0d0cc;border-radius:8px;padding:8px 10px;font-size:14px;background:#fff;color:#1a1a1a;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:#185FA5}
+textarea{resize:vertical;min-height:80px}
+input[type=file]{background:#f9f9f7;padding:6px 10px}
+input[type=checkbox]{width:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid #d0d0cc;background:#fff;color:#1a1a1a;font-size:14px;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover{background:#f0f0ec}
+.btn-primary{background:#185FA5;border-color:#185FA5;color:#fff}
+.btn-primary:hover{background:#0C447C}
+.btn-success{background:#3B6D11;border-color:#3B6D11;color:#fff}
+.btn-success:hover{background:#27500A}
+.btn-danger{background:#A32D2D;border-color:#A32D2D;color:#fff}
+.btn-danger:hover{background:#791F1F}
+.btn-export{background:#533AB7;border-color:#533AB7;color:#fff}
+.btn-export:hover{background:#3C3489}
+.btn-sm{padding:5px 10px;font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nav{display:flex;gap:4px;margin-bottom:1.5rem;flex-wrap:wrap;background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:6px}
+.nav-btn{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:#666;font-size:14px;cursor:pointer;font-family:inherit;transition:all .15s}
+.nav-btn.active{background:#185FA5;color:#fff}
+.nav-btn:hover:not(.active){background:#f0f0ec}
+.tag{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.tag-confirmed{background:#E6F1FB;color:#0C447C}
+.tag-inprogress{background:#EAF3DE;color:#27500A}
+.tag-done{background:#D3D1C7;color:#444}
+.tag-rejected{background:#FCEBEB;color:#791F1F}
+.case-row{border:1px solid #e5e5e0;border-radius:8px;padding:12px 16px;margin-bottom:8px;cursor:pointer;background:#fff;transition:background .15s}
+.case-row:hover{background:#f5f5f3}
+.case-row-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px}
+.case-meta{font-size:13px;color:#888}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #e5e5e0;flex-wrap:wrap;gap:8px}
+.user-info{font-size:13px;display:flex;align-items:center;gap:8px}
+.role-badge{display:inline-flex;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.role-admin{background:#EEEDFE;color:#3C3489}
+.role-client{background:#E1F5EE;color:#085041}
+.role-worker{background:#FAEEDA;color:#633806}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
+.alert-info{background:#E6F1FB;color:#0C447C;border:1px solid #B5D4F4}
+.alert-success{background:#EAF3DE;color:#27500A;border:1px solid #C0DD97}
+.alert-error{background:#FCEBEB;color:#791F1F;border:1px solid #F7C1C1}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:1.5rem;overflow-y:auto}
+.modal{background:#fff;border-radius:12px;border:1px solid #e5e5e0;padding:1.5rem;max-width:660px;width:100%;margin:auto}
+.field-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0ec;font-size:14px;gap:12px}
+.field-row:last-child{border-bottom:none}
+.field-lbl{color:#888;min-width:110px;flex-shrink:0}
+.field-val{color:#1a1a1a;text-align:right;word-break:break-all;white-space:pre-wrap}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:8px}
+.photo-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid #e5e5e0;cursor:pointer}
+.empty-state{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.tabs{display:flex;border-bottom:1px solid #e5e5e0;margin-bottom:1.5rem}
+.tab{padding:10px 18px;font-size:14px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+.mt{margin-top:12px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
+.flex-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-div{margin:1.25rem 0;padding-top:1.25rem;border-top:1px solid #f0f0ec}
+.logo-mk{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#185FA5;border-radius:8px;margin-right:10px;flex-shrink:0}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1rem}
+.stat-card{background:#f9f9f7;border-radius:8px;padding:12px 14px;text-align:center}
+.stat-num{font-size:24px;font-weight:600;color:#185FA5}
+.stat-lbl{font-size:12px;color:#888;margin-top:2px}
+.lightbox{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:200;cursor:pointer}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:8px}
+.guide-role{display:flex;gap:14px;padding:16px;border:1px solid #e5e5e0;border-radius:10px;margin-bottom:10px}
+.guide-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.guide-step{display:flex;gap:12px;margin-bottom:10px}
+.step-num{width:26px;height:26px;border-radius:50%;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;margin-top:1px}
+.perm-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.perm-tbl th{padding:8px 12px;background:#f5f5f3;font-weight:600;text-align:left;border-bottom:1px solid #e5e5e0}
+.perm-tbl td{padding:8px 12px;border-bottom:1px solid #f0f0ec;vertical-align:middle}
+.seq-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:6px}
+@media(max-width:640px){
+  .app{padding:.75rem}
+  .grid2,.seq-grid{grid-template-columns:1fr}
+  .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .nav{padding:4px;gap:4px}
+  .nav-btn{padding:7px 10px;font-size:13px}
+  .card{padding:1rem;border-radius:10px}
+  .modal{padding:1rem;border-radius:10px 10px 0 0;margin:auto 0 0 0;max-width:100%;width:100%}
+  .modal-bg{align-items:flex-end;padding:0}
+  .flex-gap{flex-wrap:wrap}
+  .flex-end{flex-direction:column}
+  .flex-end .btn{width:100%;justify-content:center}
+  .btn{font-size:14px}
+  h2{font-size:16px}
+  h3{font-size:14px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .case-row{padding:10px 12px}
+  .perm-tbl{font-size:12px}
+  .perm-tbl th,.perm-tbl td{padding:6px 8px}
+  input,select,textarea{font-size:16px}
+  .seq-grid{grid-template-columns:1fr 1fr auto}
+  table{font-size:13px}
+  #welcome-modal .modal{border-radius:12px;margin:auto;max-width:calc(100vw - 2rem)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- 登入/註冊 -->
+<div id="auth-screen">
+  <div class="card" style="max-width:460px;margin:2rem auto">
+    <div style="display:flex;align-items:center;margin-bottom:1.5rem">
+      <div class="logo-mk"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div><div style="font-size:18px;font-weight:600">SolarEdge 派工系統</div><div style="font-size:12px;color:#888">工程派工與進度管理</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">登入</div>
+      <div class="tab" onclick="switchTab('register')">註冊帳號</div>
+    </div>
+    <div id="login-form">
+      <div id="login-alert"></div>
+      <label>信箱</label><input type="email" id="login-email" placeholder="your@email.com">
+      <label>密碼</label><input type="password" id="login-pw" placeholder="密碼" onkeydown="if(event.key==='Enter')doLogin()">
+      <div style="margin-top:1rem"><button class="btn btn-primary" style="width:100%" onclick="doLogin()">登入</button></div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0ec">
+        <p style="font-size:12px;color:#aaa;margin-bottom:8px;text-align:center">示範帳號快速登入</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <button class="btn btn-sm" style="justify-content:center;font-size:12px" onclick="demoLogin('admin')">管理員</button>
+          <button class="btn btn-sm" style="justify-content:center;font-size:12px" onclick="demoLogin('client')">客人</button>
+          <button class="btn btn-sm" style="justify-content:center;font-size:12px" onclick="demoLogin('worker')">工班</button>
+        </div>
+      </div>
+    </div>
+    <div id="register-form" class="hidden">
+      <div id="reg-alert"></div>
+      <label>姓名</label><input type="text" id="reg-name" placeholder="您的姓名">
+      <label>信箱</label><input type="email" id="reg-email" placeholder="your@email.com" oninput="onRegEmailChange()">
+      <div id="reg-vendor-area">
+        <label>所屬廠商</label>
+        <select id="reg-vendor"><option value="">-- 選擇廠商 --</option></select>
+        <p style="font-size:12px;color:#aaa;margin-top:4px">廠商不在清單中？請聯絡管理員新增</p>
+      </div>
+      <div id="reg-company-area" class="hidden">
+        <label>公司名稱</label><input type="text" id="reg-company" placeholder="公司名稱">
+      </div>
+      <label>密碼</label><input type="password" id="reg-pw" placeholder="至少 6 個字元">
+      <div class="alert alert-info mt" style="font-size:12px">使用 @solaredge.com 信箱將自動取得管理員權限</div>
+      <div style="margin-top:1rem"><button class="btn btn-primary" style="width:100%" onclick="doRegister()">建立帳號</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 主畫面 -->
+<div id="main-screen" class="hidden">
+  <div class="topbar">
+    <div style="display:flex;align-items:center">
+      <div class="logo-mk"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <span style="font-size:17px;font-weight:600">SolarEdge 派工系統</span>
+    </div>
+    <div class="user-info"><span id="user-display"></span><button class="btn btn-sm" onclick="doLogout()">登出</button></div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn" id="nav-guide" onclick="showPage('guide')">📖 操作說明</button>
+    <button class="nav-btn" id="nav-dispatch" onclick="showPage('dispatch')" style="display:none">＋ 建立派工</button>
+    <button class="nav-btn" id="nav-cases" onclick="showPage('cases')">進度及完工</button>
+    <button class="nav-btn" id="nav-admin" onclick="showPage('admin')" style="display:none">管理後台</button>
+  </div>
+
+  <!-- 建立派工 -->
+  <div id="page-dispatch" class="hidden">
+    <div class="card">
+      <h2>新增派工</h2>
+      <div id="dispatch-alert"></div>
+      <div class="grid2">
+        <div><label>派工日期 *</label><input type="date" id="d-date"></div>
+        <div><label>CASE 編號 *</label><input type="text" id="d-case" placeholder="SE-2024-001"></div>
+      </div>
+      <div class="grid2">
+        <div><label>案場名稱 *</label><input type="text" id="d-site" placeholder="案場名稱"></div>
+        <div><label>序號 *</label><input type="text" id="d-seq" placeholder="A-01"></div>
+      </div>
+      <!-- 舊序號多筆 -->
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="margin:0">舊序號（可多筆）</label>
+          <button type="button" class="btn btn-sm" onclick="addOldSeqRow()">＋ 新增舊序號</button>
+        </div>
+        <div id="d-oldseq-list">
+          <div class="seq-grid oldseq-row">
+            <input type="text" class="d-oldseq-input" placeholder="舊序號">
+            <div></div>
+            <button type="button" class="btn btn-sm" style="color:#ccc" onclick="removeOldSeqRow(this)">×</button>
+          </div>
+        </div>
+      </div>
+      <label>作業內容 *</label>
+      <textarea id="d-work" placeholder="說明本次作業內容、範圍..."></textarea>
+      <label>案場資訊及聯絡人 *</label>
+      <textarea id="d-contact" placeholder="地址、聯絡人姓名、聯絡電話..."></textarea>
+      <label>派工人 *</label>
+      <input type="text" id="d-dispatcher" placeholder="填寫派工人姓名">
+      <div class="grid2">
+        <div><label>指派工班 *</label><select id="d-worker"><option value="">-- 選擇工班 --</option></select></div>
+        <div><label>可見廠商 *</label><select id="d-vendor"><option value="">-- 選擇廠商 --</option></select></div>
+      </div>
+      <div class="flex-end">
+        <button class="btn" onclick="showPage('cases')">取消</button>
+        <button class="btn btn-primary" onclick="submitDispatch()">建立派工</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 進度及完工 -->
+  <div id="page-cases">
+    <div id="stats-area"></div>
+    <div class="card card-sm" style="margin-bottom:1rem">
+      <div class="flex-gap" style="margin-bottom:8px">
+        <input type="text" id="search-input" placeholder="搜尋 CASE、案場..." style="max-width:220px" oninput="renderCases()">
+        <select id="filter-status" style="max-width:150px" onchange="renderCases()">
+          <option value="">全部狀態</option>
+          <option value="confirmed">已指派工班</option>
+          <option value="inprogress">施工中</option>
+          <option value="done">已完工</option>
+          <option value="rejected">已退回</option>
+        </select>
+      </div>
+      <div class="flex-gap">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#888">
+          派工日期
+          <input type="date" id="filter-from" style="max-width:140px;font-size:13px" onchange="renderCases()">
+          —
+          <input type="date" id="filter-to" style="max-width:140px;font-size:13px" onchange="renderCases()">
+          <button class="btn btn-sm" style="font-size:12px;color:#aaa" onclick="clearDate()">清除</button>
+        </div>
+        <button class="btn btn-export btn-sm" onclick="showExportModal()">匯出 Excel</button>
+      </div>
+    </div>
+    <!-- 匯出Modal -->
+    <div id="export-modal" class="modal-bg hidden" onclick="if(event.target.id==='export-modal')closeExportModal()">
+      <div class="modal" style="max-width:460px;width:100%" onclick="event.stopPropagation()">
+        <h2 style="margin-bottom:1rem">匯出 Excel 設定</h2>
+        <label>派工日期區間（留空匯出全部）</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input type="date" id="exp-from" style="flex:1"><span style="color:#888">—</span><input type="date" id="exp-to" style="flex:1">
+        </div>
+        <label style="margin-top:16px">篩選狀態（留空全部）</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a1a;cursor:pointer"><input type="checkbox" id="exp-confirmed"> 已指派工班</label>
+          <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a1a;cursor:pointer"><input type="checkbox" id="exp-inprogress"> 施工中</label>
+          <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a1a;cursor:pointer"><input type="checkbox" id="exp-done"> 已完工</label>
+          <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:14px;color:#1a1a1a;cursor:pointer"><input type="checkbox" id="exp-rejected"> 已退回</label>
+        </div>
+        <div class="flex-end">
+          <button class="btn" onclick="closeExportModal()">取消</button>
+          <button class="btn btn-export" onclick="doExport()">確認匯出</button>
+        </div>
+      </div>
+    </div>
+    <div id="cases-list"></div>
+  </div>
+
+  <!-- 管理後台 -->
+  <div id="page-admin" class="hidden">
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="margin:0">廠商管理</h2>
+        <button class="btn btn-primary btn-sm" onclick="addVendor()">＋ 新增廠商</button>
+      </div>
+      <div id="admin-vendors"></div>
+    </div>
+    <div class="card"><h2>帳號管理</h2><div id="admin-users"></div></div>
+  </div>
+
+  <!-- 操作說明 -->
+  <div id="page-guide" class="hidden">
+    <div class="card">
+      <h2 style="margin-bottom:.25rem">系統操作說明</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:1.5rem">請依照角色查看對應說明，並在下方留下修正意見</p>
+      <div style="margin-bottom:2rem">
+        <h3 style="margin-bottom:1rem">👥 三種使用角色</h3>
+        <div class="guide-role"><div class="guide-icon" style="background:#EEEDFE">🛠️</div>
+          <div><div style="font-weight:600;margin-bottom:4px">管理員 <span class="role-badge role-admin">管理員</span></div>
+          <div style="font-size:13px;color:#555;line-height:1.7">@solaredge.com 信箱自動取得。建立派工、直接指派工班＋設定可見廠商、管理廠商清單與帳號角色。</div></div></div>
+        <div class="guide-role"><div class="guide-icon" style="background:#E1F5EE">🏢</div>
+          <div><div style="font-weight:600;margin-bottom:4px">客人 <span class="role-badge role-client">客人</span></div>
+          <div style="font-size:13px;color:#555;line-height:1.7">一般信箱註冊，選擇<strong>所屬廠商</strong>，登入後可查看該廠商所有案件進度與完工照片，可匯出 Excel。</div></div></div>
+        <div class="guide-role"><div class="guide-icon" style="background:#FAEEDA">👷</div>
+          <div><div style="font-weight:600;margin-bottom:4px">工班 <span class="role-badge role-worker">工班</span></div>
+          <div style="font-size:13px;color:#555;line-height:1.7">一般信箱註冊後由管理員設定角色。只看指派給自己的案件，負責填寫新序號、更新進度、上傳完工照片。</div></div></div>
+      </div>
+      <div style="margin-bottom:2rem">
+        <h3 style="margin-bottom:1rem">🔒 權限總表</h3>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="perm-tbl">
+          <thead><tr><th>功能</th><th style="text-align:center">客人</th><th style="text-align:center">工班</th><th style="text-align:center">管理員</th></tr></thead>
+          <tbody>
+            <tr><td>建立派工 / 指派工班</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td></tr>
+            <tr><td>查看案件</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 自己廠商</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 指派給自己</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 全部</td></tr>
+            <tr><td>填寫新序號 / 更新進度</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td></tr>
+            <tr><td>上傳完工照片 / 標記完工</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td></tr>
+            <tr><td>匯出 Excel</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 自己廠商</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 自己的</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓ 全部</td></tr>
+            <tr><td>新增廠商 / 管理帳號</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#ccc">—</td><td style="text-align:center;color:#3B6D11;font-weight:500">✓</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+      <div style="margin-bottom:2rem">
+        <h3 style="margin-bottom:.75rem">⚠️ 測試版注意事項</h3>
+        <div class="alert alert-info" style="font-size:13px;line-height:1.8">
+          此版本資料存在<strong>瀏覽器記憶體</strong>，重新整理後資料重置。正式版將接 Google 試算表，多人共用即時資料。
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:.75rem">💬 意見回饋</h3>
+        <p style="font-size:13px;color:#888;margin-bottom:1rem">試用後請留下修正意見，協助改善系統</p>
+        <div style="background:#fff;border:1px solid #e5e5e0;border-radius:10px;padding:1.25rem">
+          <div id="fb-alert"></div>
+          <label>姓名</label><input type="text" id="fb-name" placeholder="您的姓名">
+          <label>角色</label>
+          <select id="fb-role"><option value="">-- 選擇 --</option><option>管理員</option><option>客人</option><option>工班</option></select>
+          <label>意見類型</label>
+          <select id="fb-type"><option>功能建議</option><option>操作問題</option><option>介面改善</option><option>欄位調整</option><option>其他</option></select>
+          <label>意見內容</label>
+          <textarea id="fb-content" placeholder="請描述您的建議或遇到的問題..."></textarea>
+          <div class="flex-end"><button class="btn btn-primary" onclick="submitFeedback()">送出意見</button></div>
+        </div>
+        <div id="fb-list" style="margin-top:1rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 案件Modal -->
+<div id="case-modal" class="modal-bg hidden" onclick="if(event.target.id==='case-modal')closeModal()">
+  <div class="modal" style="width:100%" onclick="event.stopPropagation()">
+    <div id="modal-content"></div>
+    <div class="flex-end"><button class="btn" onclick="closeModal()">關閉</button></div>
+  </div>
+</div>
+
+<!-- 燈箱 -->
+<div id="lightbox" class="lightbox hidden" onclick="document.getElementById('lightbox').classList.add('hidden')">
+  <img id="lightbox-img" src="" alt="完工照片">
+</div>
+
+<!-- 歡迎視窗 -->
+<div id="welcome-modal" class="modal-bg" style="z-index:300;align-items:center">
+  <div class="modal" style="max-width:420px;text-align:center;border-radius:12px" onclick="event.stopPropagation()">
+    <div style="font-size:36px;margin-bottom:12px">👋</div>
+    <h2 style="margin-bottom:8px">歡迎使用示範介面</h2>
+    <p style="font-size:14px;color:#666;line-height:1.8;margin-bottom:1.25rem">
+      這是 SolarEdge 派工系統的<strong>測試版示範</strong><br>
+      請直接點選下方示範帳號登入體驗<br>
+      並在「操作說明」頁留下修正意見
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1.25rem">
+      <button class="btn" style="flex-direction:column;justify-content:center;padding:12px 6px;gap:4px" onclick="closeWelcome();demoLogin('admin')">
+        <span style="font-size:20px">🛠️</span><span style="font-size:12px;font-weight:600">管理員</span><span style="font-size:11px;color:#888">全部功能</span>
+      </button>
+      <button class="btn" style="flex-direction:column;justify-content:center;padding:12px 6px;gap:4px" onclick="closeWelcome();demoLogin('client')">
+        <span style="font-size:20px">🏢</span><span style="font-size:12px;font-weight:600">客人</span><span style="font-size:11px;color:#888">查看案件</span>
+      </button>
+      <button class="btn" style="flex-direction:column;justify-content:center;padding:12px 6px;gap:4px" onclick="closeWelcome();demoLogin('worker')">
+        <span style="font-size:20px">👷</span><span style="font-size:12px;font-weight:600">工班</span><span style="font-size:11px;color:#888">更新進度</span>
+      </button>
+    </div>
+    <button class="btn" style="width:100%;justify-content:center;color:#aaa;font-size:13px" onclick="closeWelcome()">我要自己登入 / 註冊</button>
+  </div>
+</div>
+
+</div>
+<script>
+// ── 記憶體資料庫 ─────────────────────────────────────
+var DB = { users:[], cases:[], vendors:[], feedbacks:[] };
+function getUsers(){return DB.users} function saveUsers(u){DB.users=u}
+function getCases(){return DB.cases} function saveCases(c){DB.cases=c}
+function getVendors(){return DB.vendors} function saveVendors(v){DB.vendors=v}
+function getFeedbacks(){return DB.feedbacks} function saveFeedbacks(f){DB.feedbacks=f}
+
+var STATUS_LABELS = {confirmed:'已指派工班',inprogress:'施工中',done:'已完工',rejected:'已退回'};
+var STATUS_CLASS  = {confirmed:'tag-confirmed',inprogress:'tag-inprogress',done:'tag-done',rejected:'tag-rejected'};
+var currentUser = null;
+
+// ── 初始示範資料 ──────────────────────────────────────
+function initDemo(){
+  DB.vendors = [
+    {id:'v1',name:'ABC太陽能開發'},
+    {id:'v2',name:'新日光能源'},
+    {id:'v3',name:'綠能科技股份'}
+  ];
+  DB.users = [
+    {id:'admin1',email:'admin@solaredge.com',pw:'admin123',name:'王管理員',company:'SolarEdge Taiwan',role:'admin',vendorId:''},
+    {id:'client1',email:'client@abc.com',pw:'client123',name:'李大明',company:'ABC太陽能開發',role:'client',vendorId:'v1'},
+    {id:'worker1',email:'worker@crew.com',pw:'worker123',name:'張師傅',company:'優質工程行',role:'worker',vendorId:''}
+  ];
+  DB.cases = [
+    {id:'c001',caseNo:'SE-2024-001',site:'台北市內湖廠房',seq:'A-01',
+     seqPairs:[{old:'INV-001',newSeq:''},{old:'INV-002',newSeq:''}],
+     date:'2024-06-10',work:'太陽能板安裝及配線，共 48 片模組',
+     contact:'張先生 0912-345-678\n台北市內湖區瑞光路 100 號',
+     dispatcher:'王管理員',vendorId:'v1',vendorName:'ABC太陽能開發',
+     assignedTo:'worker1',assignedName:'張師傅',workerCompany:'優質工程行',
+     status:'inprogress',estTime:'2024-06-15T09:00',doneTime:'',photos:[],
+     workerNote:'已完成支架安裝，配線進行中',createdAt:'2024-06-10'},
+    {id:'c002',caseNo:'SE-2024-002',site:'新北市板橋住宅',seq:'B-03',
+     seqPairs:[{old:'OLD-B03',newSeq:''}],
+     date:'2024-06-12',work:'逆變器更換及系統檢測',
+     contact:'陳小姐 0922-111-222\n新北市板橋區文化路 200 號',
+     dispatcher:'王管理員',vendorId:'v1',vendorName:'ABC太陽能開發',
+     assignedTo:'worker1',assignedName:'張師傅',workerCompany:'優質工程行',
+     status:'confirmed',estTime:'',doneTime:'',photos:[],workerNote:'',createdAt:'2024-06-12'},
+    {id:'c003',caseNo:'SE-2024-003',site:'桃園航空城廠區',seq:'C-07',
+     seqPairs:[{old:'OLD-C07A',newSeq:'NEW-C07A'},{old:'OLD-C07B',newSeq:'NEW-C07B'}],
+     date:'2024-05-20',work:'年度維護保養及清洗',
+     contact:'林經理 0933-777-888\n桃園市大園區航空南路 50 號',
+     dispatcher:'王管理員',vendorId:'v2',vendorName:'新日光能源',
+     assignedTo:'worker1',assignedName:'張師傅',workerCompany:'優質工程行',
+     status:'done',estTime:'2024-05-25T08:00',doneTime:'2024-05-25T16:30',photos:[],
+     workerNote:'全面清洗完成，系統效能正常',createdAt:'2024-05-20'}
+  ];
+}
+
+// ── 登入/註冊 ─────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('#auth-screen .tab').forEach(function(t,i){t.classList.toggle('active',i===(tab==='login'?0:1));});
+  document.getElementById('login-form').classList.toggle('hidden',tab!=='login');
+  document.getElementById('register-form').classList.toggle('hidden',tab!=='register');
+  if(tab==='register') populateRegVendors();
+}
+function onRegEmailChange(){
+  var isAdmin = document.getElementById('reg-email').value.endsWith('@solaredge.com');
+  document.getElementById('reg-vendor-area').classList.toggle('hidden',isAdmin);
+  document.getElementById('reg-company-area').classList.toggle('hidden',!isAdmin);
+}
+function populateRegVendors(){
+  var sel = document.getElementById('reg-vendor');
+  sel.innerHTML = '<option value="">-- 選擇廠商 --</option>'+
+    getVendors().map(function(v){return '<option value="'+v.id+'">'+v.name+'</option>';}).join('');
+}
+function demoLogin(role){
+  var map = {admin:['admin@solaredge.com','admin123'],client:['client@abc.com','client123'],worker:['worker@crew.com','worker123']};
+  document.getElementById('login-email').value=map[role][0];
+  document.getElementById('login-pw').value=map[role][1];
+  doLogin();
+}
+function doLogin(){
+  var email=document.getElementById('login-email').value.trim();
+  var pw=document.getElementById('login-pw').value;
+  var user=getUsers().find(function(u){return u.email===email&&u.pw===pw;});
+  if(!user){showAlert('login-alert','error','信箱或密碼錯誤');return;}
+  currentUser=user; showMain();
+}
+function doRegister(){
+  var name=document.getElementById('reg-name').value.trim();
+  var email=document.getElementById('reg-email').value.trim();
+  var pw=document.getElementById('reg-pw').value;
+  var isAdmin=email.endsWith('@solaredge.com');
+  var vendorId=isAdmin?'':document.getElementById('reg-vendor').value;
+  var company=isAdmin?(document.getElementById('reg-company').value.trim()||'SolarEdge'):'';
+  if(!name||!email||!pw){showAlert('reg-alert','error','請填寫所有欄位');return;}
+  if(pw.length<6){showAlert('reg-alert','error','密碼至少 6 個字元');return;}
+  if(!isAdmin&&!vendorId){showAlert('reg-alert','error','請選擇所屬廠商');return;}
+  var users=getUsers();
+  if(users.find(function(u){return u.email===email;})){showAlert('reg-alert','error','此信箱已被註冊');return;}
+  var vendor=getVendors().find(function(v){return v.id===vendorId;});
+  var newUser={id:'u'+Date.now(),email:email,pw:pw,name:name,
+    company:isAdmin?company:(vendor?vendor.name:''),
+    role:isAdmin?'admin':'client',vendorId:vendorId};
+  users.push(newUser); saveUsers(users);
+  currentUser=newUser; showMain();
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('main-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+}
+function showMain(){
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('main-screen').classList.remove('hidden');
+  var roleLabel={admin:'管理員',client:'客人',worker:'工班'};
+  var roleClass={admin:'role-admin',client:'role-client',worker:'role-worker'};
+  document.getElementById('user-display').innerHTML=
+    currentUser.name+' <span class="role-badge '+roleClass[currentUser.role]+'">'+roleLabel[currentUser.role]+'</span>';
+  document.getElementById('nav-dispatch').style.display=currentUser.role==='admin'?'':'none';
+  document.getElementById('nav-admin').style.display=currentUser.role==='admin'?'':'none';
+  showPage('guide');
+}
+
+// ── 頁面切換 ──────────────────────────────────────────
+function showPage(page){
+  ['dispatch','cases','admin','guide'].forEach(function(p){
+    document.getElementById('page-'+p).classList.toggle('hidden',p!==page);
+    var btn=document.getElementById('nav-'+p);
+    if(btn) btn.classList.toggle('active',p===page);
+  });
+  if(page==='cases') renderCases();
+  if(page==='admin'){renderVendors();renderUsers();}
+  if(page==='guide') renderFeedbacks();
+  if(page==='dispatch') populateDispatch();
+}
+function showAlert(id,type,msg){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML='<div class="alert alert-'+type+'">'+msg+'</div>';
+  setTimeout(function(){if(el)el.innerHTML='';},4000);
+}
+
+// ── 建立派工 ──────────────────────────────────────────
+function populateDispatch(){
+  var ws=document.getElementById('d-worker');
+  ws.innerHTML='<option value="">-- 選擇工班 --</option>'+
+    getUsers().filter(function(u){return u.role==='worker';}).map(function(w){
+      return '<option value="'+w.id+'|'+w.name+'|'+w.company+'">'+w.name+' ('+w.company+')</option>';
+    }).join('');
+  var vs=document.getElementById('d-vendor');
+  vs.innerHTML='<option value="">-- 選擇廠商 --</option>'+
+    getVendors().map(function(v){return '<option value="'+v.id+'|'+v.name+'">'+v.name+'</option>';}).join('');
+}
+function addOldSeqRow(){
+  var list=document.getElementById('d-oldseq-list');
+  var div=document.createElement('div');
+  div.className='seq-grid oldseq-row';
+  div.innerHTML='<input type="text" class="d-oldseq-input" placeholder="舊序號"><div></div>'+
+    '<button type="button" class="btn btn-sm" style="color:#ccc" onclick="removeOldSeqRow(this)">×</button>';
+  list.appendChild(div);
+}
+function removeOldSeqRow(btn){
+  var rows=document.querySelectorAll('#d-oldseq-list .oldseq-row');
+  if(rows.length<=1)return;
+  btn.parentElement.remove();
+}
+function submitDispatch(){
+  var date=document.getElementById('d-date').value;
+  var caseNo=document.getElementById('d-case').value.trim();
+  var site=document.getElementById('d-site').value.trim();
+  var seq=document.getElementById('d-seq').value.trim();
+  var work=document.getElementById('d-work').value.trim();
+  var contact=document.getElementById('d-contact').value.trim();
+  var dispatcher=document.getElementById('d-dispatcher').value.trim();
+  var wsel=document.getElementById('d-worker').value;
+  var vsel=document.getElementById('d-vendor').value;
+  if(!date||!caseNo||!site||!seq||!work||!contact||!dispatcher){showAlert('dispatch-alert','error','請填寫所有必填欄位');return;}
+  if(!wsel){showAlert('dispatch-alert','error','請選擇工班');return;}
+  if(!vsel){showAlert('dispatch-alert','error','請選擇可見廠商');return;}
+  var wparts=wsel.split('|'); var vparts=vsel.split('|');
+  var oldInputs=document.querySelectorAll('.d-oldseq-input');
+  var seqPairs=Array.from(oldInputs).map(function(inp){return {old:inp.value.trim(),newSeq:''};}).filter(function(p){return p.old;});
+  var cases=getCases();
+  cases.unshift({
+    id:'c'+Date.now(),caseNo:caseNo,site:site,seq:seq,seqPairs:seqPairs,
+    date:date,work:work,contact:contact,dispatcher:dispatcher,
+    vendorId:vparts[0],vendorName:vparts[1],
+    assignedTo:wparts[0],assignedName:wparts[1],workerCompany:wparts[2],
+    status:'confirmed',estTime:'',doneTime:'',photos:[],workerNote:'',
+    createdAt:new Date().toISOString().split('T')[0]
+  });
+  saveCases(cases);
+  ['d-date','d-case','d-site','d-seq','d-work','d-contact','d-dispatcher'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('d-worker').value='';
+  document.getElementById('d-vendor').value='';
+  document.getElementById('d-oldseq-list').innerHTML=
+    '<div class="seq-grid oldseq-row"><input type="text" class="d-oldseq-input" placeholder="舊序號"><div></div>'+
+    '<button type="button" class="btn btn-sm" style="color:#ccc" onclick="removeOldSeqRow(this)">×</button></div>';
+  showAlert('dispatch-alert','success','派工已建立並指派完成');
+  setTimeout(function(){showPage('cases');},1200);
+}
+
+// ── 案件列表 ──────────────────────────────────────────
+function getVisible(fromDate,toDate,statuses){
+  var cases=getCases();
+  if(currentUser.role==='client') cases=cases.filter(function(c){return c.vendorId===currentUser.vendorId;});
+  if(currentUser.role==='worker') cases=cases.filter(function(c){return c.assignedTo===currentUser.id;});
+  var q=(document.getElementById('search-input')?document.getElementById('search-input').value:'').toLowerCase();
+  var st=statuses||( document.getElementById('filter-status')?document.getElementById('filter-status').value:'');
+  var df=fromDate||(document.getElementById('filter-from')?document.getElementById('filter-from').value:'');
+  var dt=toDate||(document.getElementById('filter-to')?document.getElementById('filter-to').value:'');
+  if(q) cases=cases.filter(function(c){return (c.caseNo+c.site+c.seq).toLowerCase().indexOf(q)!==-1;});
+  if(st&&typeof st==='string'&&st) cases=cases.filter(function(c){return c.status===st;});
+  if(Array.isArray(st)&&st.length) cases=cases.filter(function(c){return st.indexOf(c.status)!==-1;});
+  if(df) cases=cases.filter(function(c){return c.date>=df;});
+  if(dt) cases=cases.filter(function(c){return c.date<=dt;});
+  return cases;
+}
+function clearDate(){
+  document.getElementById('filter-from').value='';
+  document.getElementById('filter-to').value='';
+  renderCases();
+}
+function renderCases(){
+  var cases=getVisible();
+  // stats
+  var sa=document.getElementById('stats-area');
+  if(currentUser.role==='admin'){
+    var all=getCases();
+    var cnt={confirmed:0,inprogress:0,done:0};
+    all.forEach(function(c){if(cnt[c.status]!==undefined)cnt[c.status]++;});
+    sa.innerHTML='<div class="stat-grid"><div class="stat-card"><div class="stat-num">'+all.length+'</div><div class="stat-lbl">全部案件</div></div>'+
+      '<div class="stat-card"><div class="stat-num" style="color:#0C447C">'+cnt.confirmed+'</div><div class="stat-lbl">已指派工班</div></div>'+
+      '<div class="stat-card"><div class="stat-num" style="color:#27500A">'+cnt.inprogress+'</div><div class="stat-lbl">施工中</div></div>'+
+      '<div class="stat-card"><div class="stat-num" style="color:#444">'+cnt.done+'</div><div class="stat-lbl">已完工</div></div></div>';
+  } else { sa.innerHTML=''; }
+  var el=document.getElementById('cases-list');
+  if(!cases.length){el.innerHTML='<div class="empty-state">目前沒有符合條件的案件</div>';return;}
+  el.innerHTML=cases.map(function(c){
+    return '<div class="case-row" onclick="openCase(\''+c.id+'\')">'+
+      '<div class="case-row-hd"><span style="font-weight:600">'+c.caseNo+' — '+c.site+'</span>'+
+      '<span class="tag '+(STATUS_CLASS[c.status]||'tag-confirmed')+'">'+(STATUS_LABELS[c.status]||c.status)+'</span></div>'+
+      '<div class="case-meta">序號 '+c.seq+'　派工日期 '+c.date+'　廠商：'+(c.vendorName||'—')+'　工班：'+(c.assignedName||'—')+
+      (c.doneTime?'　完工：'+c.doneTime.replace('T',' '):'')+
+      '</div></div>';
+  }).join('');
+}
+
+// ── 案件詳情 ──────────────────────────────────────────
+function seqTableHTML(pairs){
+  if(!pairs||!pairs.length)return '';
+  var rows=pairs.map(function(p){
+    return '<tr><td style="padding:6px 10px;border-bottom:1px solid #f0f0ec">'+(p.old||'—')+'</td>'+
+      '<td style="padding:6px 10px;border-bottom:1px solid #f0f0ec">'+(p.newSeq||'—')+'</td></tr>';
+  }).join('');
+  return '<div style="margin:8px 0 4px;font-size:13px;color:#888;font-weight:500">序號對照</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px">'+
+    '<thead><tr style="background:#f5f5f3">'+
+    '<th style="padding:6px 10px;text-align:left;border-bottom:1px solid #e5e5e0;color:#666;font-weight:500">舊序號</th>'+
+    '<th style="padding:6px 10px;text-align:left;border-bottom:1px solid #e5e5e0;color:#666;font-weight:500">新序號</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function seqEditHTML(pairs){
+  var list=pairs&&pairs.length?pairs:[{old:'',newSeq:''}];
+  return list.map(function(p){
+    return '<div class="seq-grid seqpair-row">'+
+      '<input type="text" class="sp-old" value="'+(p.old||'')+'" placeholder="舊序號">'+
+      '<input type="text" class="sp-new" value="'+(p.newSeq||'')+'" placeholder="新序號">'+
+      '<button type="button" class="btn btn-sm" style="color:#ccc" onclick="removeSeqRow(this)">×</button>'+
+      '</div>';
+  }).join('');
+}
+function photosHTML(caseId,photos){
+  if(!photos||!photos.length)return '';
+  var thumbs=photos.map(function(p,i){
+    return '<img src="'+p+'" class="photo-thumb" onclick="openLightbox(\''+caseId+'\','+i+')" alt="照片">';
+  }).join('');
+  return '<div style="margin-top:10px"><div style="font-size:13px;color:#888;margin-bottom:6px">完工照片 ('+photos.length+' 張)</div>'+
+    '<div class="photo-grid">'+thumbs+'</div></div>';
+}
+
+function openCase(id){
+  var c=getCases().find(function(x){return x.id===id;});
+  if(!c)return;
+  var isAdmin=currentUser.role==='admin';
+  var isWorker=currentUser.role==='worker'&&c.assignedTo===currentUser.id;
+  var canEdit=(isWorker||isAdmin)&&c.status!=='done'&&c.status!=='rejected';
+
+  var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:8px">'+
+    '<h2 style="margin:0">'+c.caseNo+' — '+c.site+'</h2>'+
+    '<span class="tag '+(STATUS_CLASS[c.status]||'tag-confirmed')+'">'+(STATUS_LABELS[c.status]||c.status)+'</span></div>'+
+    '<h3>派工資訊</h3>'+
+    '<div class="field-row"><span class="field-lbl">派工日期</span><span class="field-val">'+c.date+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">CASE 編號</span><span class="field-val">'+c.caseNo+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">案場</span><span class="field-val">'+c.site+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">序號</span><span class="field-val">'+c.seq+'</span></div>'+
+    seqTableHTML(c.seqPairs)+
+    '<div class="field-row"><span class="field-lbl">作業內容</span><span class="field-val">'+c.work+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">聯絡資訊</span><span class="field-val">'+c.contact+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">派工人</span><span class="field-val">'+c.dispatcher+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">可見廠商</span><span class="field-val">'+(c.vendorName||'—')+'</span></div>';
+
+  // 進度
+  html+='<div class="sec-div"><h3>施工進度</h3>'+
+    '<div class="field-row"><span class="field-lbl">指派工班</span><span class="field-val">'+c.assignedName+' ('+c.workerCompany+')</span></div>'+
+    '<div class="field-row"><span class="field-lbl">預計施作時間</span><span class="field-val">'+(c.estTime?c.estTime.replace('T',' '):'—')+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">完工時間</span><span class="field-val">'+(c.doneTime?c.doneTime.replace('T',' '):'—')+'</span></div>'+
+    '<div class="field-row"><span class="field-lbl">施工備注</span><span class="field-val">'+(c.workerNote||'—')+'</span></div>'+
+    photosHTML(c.id,c.photos)+'</div>';
+
+  // 編輯區（工班/管理員）
+  if(canEdit){
+    html+='<div class="sec-div"><h3>更新進度</h3>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+      '<label style="margin:0;font-size:13px;color:#666">序號對照（舊序號由管理員帶入，請填新序號）</label>'+
+      '<button type="button" class="btn btn-sm" onclick="addSeqRow()">＋ 新增一組</button></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:4px;font-size:12px;color:#888;font-weight:500">'+
+      '<div>舊序號</div><div>新序號</div><div></div></div>'+
+      '<div id="upd-pairs">'+seqEditHTML(c.seqPairs)+'</div>'+
+      '<div class="grid2" style="margin-top:12px">'+
+      '<div><label>預計施作時間</label><input type="datetime-local" id="upd-est" value="'+(c.estTime||'')+'"></div>'+
+      '<div><label>完工時間</label><input type="datetime-local" id="upd-done" value="'+(c.doneTime||'')+'"></div></div>'+
+      '<label>施工備注</label><textarea id="upd-note">'+(c.workerNote||'')+'</textarea>'+
+      '<label>上傳完工照片</label><input type="file" id="upd-photos" accept="image/*" multiple>'+
+      '<div class="flex-gap mt">'+
+      '<button class="btn btn-primary btn-sm" onclick="saveProgress(\''+c.id+'\')">儲存進度</button>'+
+      '<button class="btn btn-success btn-sm" onclick="markDone(\''+c.id+'\')">標記完工</button>'+
+      (isAdmin?'<button class="btn btn-danger btn-sm" onclick="rejectCase(\''+c.id+'\')">退回</button>':'')+
+      '</div></div>';
+  }
+
+  // 管理員重新指派
+  if(isAdmin&&c.status!=='done'&&c.status!=='rejected'){
+    var workers=getUsers().filter(function(u){return u.role==='worker';});
+    var vendors=getVendors();
+    html+='<div class="sec-div"><h3>修改指派</h3><div class="grid2">'+
+      '<div><label>工班</label><select id="reassign-w">'+
+      workers.map(function(w){return '<option value="'+w.id+'|'+w.name+'|'+w.company+'"'+(w.id===c.assignedTo?' selected':'')+'>'+w.name+' ('+w.company+')</option>';}).join('')+
+      '</select></div>'+
+      '<div><label>可見廠商</label><select id="reassign-v">'+
+      vendors.map(function(v){return '<option value="'+v.id+'|'+v.name+'"'+(v.id===c.vendorId?' selected':'')+'>'+v.name+'</option>';}).join('')+
+      '</select></div></div>'+
+      '<div class="mt"><button class="btn btn-sm" onclick="doReassign(\''+c.id+'\')">更新指派</button></div></div>';
+  }
+
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('case-modal').classList.remove('hidden');
+}
+function closeModal(){document.getElementById('case-modal').classList.add('hidden');}
+
+function addSeqRow(){
+  var list=document.getElementById('upd-pairs');
+  var div=document.createElement('div');
+  div.className='seq-grid seqpair-row';
+  div.innerHTML='<input type="text" class="sp-old" placeholder="舊序號">'+
+    '<input type="text" class="sp-new" placeholder="新序號">'+
+    '<button type="button" class="btn btn-sm" style="color:#ccc" onclick="removeSeqRow(this)">×</button>';
+  list.appendChild(div);
+}
+function removeSeqRow(btn){
+  var rows=document.querySelectorAll('#upd-pairs .seqpair-row');
+  if(rows.length<=1)return;
+  btn.parentElement.remove();
+}
+function readSeqPairs(){
+  var rows=document.querySelectorAll('#upd-pairs .seqpair-row');
+  return Array.from(rows).map(function(r){
+    return {old:r.querySelector('.sp-old').value.trim(), newSeq:r.querySelector('.sp-new').value.trim()};
+  }).filter(function(p){return p.old||p.newSeq;});
+}
+function saveProgress(id){
+  var est=document.getElementById('upd-est').value;
+  var done=document.getElementById('upd-done').value;
+  var note=document.getElementById('upd-note').value;
+  var pairs=readSeqPairs();
+  var files=document.getElementById('upd-photos').files;
+  var cases=getCases();
+  var c=cases.find(function(x){return x.id===id;});
+  c.estTime=est; c.doneTime=done; c.workerNote=note; c.seqPairs=pairs;
+  if(c.status==='confirmed') c.status='inprogress';
+  if(files.length){
+    var readers=Array.from(files).map(function(f){
+      return new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsDataURL(f);});
+    });
+    Promise.all(readers).then(function(imgs){
+      c.photos=(c.photos||[]).concat(imgs);
+      saveCases(cases); closeModal(); renderCases();
+    });
+  } else { saveCases(cases); closeModal(); renderCases(); }
+}
+function markDone(id){
+  var done=document.getElementById('upd-done').value;
+  if(!done){alert('請填寫完工時間');return;}
+  var note=document.getElementById('upd-note').value;
+  var pairs=readSeqPairs();
+  var cases=getCases();
+  var c=cases.find(function(x){return x.id===id;});
+  c.status='done'; c.doneTime=done; c.workerNote=note; c.seqPairs=pairs;
+  saveCases(cases); closeModal(); renderCases();
+}
+function rejectCase(id){
+  if(!confirm('確定退回此派工？'))return;
+  var cases=getCases();
+  cases.find(function(x){return x.id===id;}).status='rejected';
+  saveCases(cases); closeModal(); renderCases();
+}
+function doReassign(id){
+  var wsel=document.getElementById('reassign-w').value;
+  var vsel=document.getElementById('reassign-v').value;
+  var wp=wsel.split('|'); var vp=vsel.split('|');
+  var cases=getCases();
+  var c=cases.find(function(x){return x.id===id;});
+  c.assignedTo=wp[0]; c.assignedName=wp[1]; c.workerCompany=wp[2];
+  c.vendorId=vp[0]; c.vendorName=vp[1];
+  saveCases(cases); closeModal(); renderCases();
+}
+
+// ── 燈箱 ──────────────────────────────────────────────
+function openLightbox(caseId,idx){
+  var c=getCases().find(function(x){return x.id===caseId;});
+  if(!c||!c.photos[idx])return;
+  document.getElementById('lightbox-img').src=c.photos[idx];
+  document.getElementById('lightbox').classList.remove('hidden');
+}
+
+// ── 匯出 Excel ────────────────────────────────────────
+function showExportModal(){
+  var df=document.getElementById('filter-from').value||'';
+  var dt=document.getElementById('filter-to').value||'';
+  var st=document.getElementById('filter-status').value||'';
+  document.getElementById('exp-from').value=df;
+  document.getElementById('exp-to').value=dt;
+  ['confirmed','inprogress','done','rejected'].forEach(function(s){
+    var el=document.getElementById('exp-'+s);
+    if(el) el.checked=(!st||st===s);
+  });
+  document.getElementById('export-modal').classList.remove('hidden');
+}
+function closeExportModal(){document.getElementById('export-modal').classList.add('hidden');}
+function doExport(){
+  var df=document.getElementById('exp-from').value;
+  var dt=document.getElementById('exp-to').value;
+  var statuses=['confirmed','inprogress','done','rejected'].filter(function(s){return document.getElementById('exp-'+s).checked;});
+  var cases=getVisible(df,dt,statuses.length?statuses:null);
+  if(!cases.length){alert('沒有符合條件的案件');return;}
+  var headers=['CASE編號','案場','序號','舊序號','新序號','派工日期','作業內容','聯絡資訊','派工人','可見廠商','狀態','指派工班','工班公司','預計施作時間','完工時間','施工備注','照片數'];
+  var rows=[];
+  cases.forEach(function(c){
+    var pairs=c.seqPairs&&c.seqPairs.length?c.seqPairs:[{old:'',newSeq:''}];
+    pairs.forEach(function(p){
+      rows.push([c.caseNo,c.site,c.seq,p.old||'',p.newSeq||'',c.date,
+        '"'+c.work.replace(/"/g,'""')+'"','"'+c.contact.replace(/"/g,'""')+'"',
+        c.dispatcher,c.vendorName||'',STATUS_LABELS[c.status]||c.status,
+        c.assignedName||'',c.workerCompany||'',
+        c.estTime?c.estTime.replace('T',' '):'',c.doneTime?c.doneTime.replace('T',' '):'',
+        '"'+(c.workerNote||'').replace(/"/g,'""')+'"',(c.photos||[]).length]);
+    });
+  });
+  var suffix=(df||dt)?(df||'起')+'_'+(dt||'迄'):'全部';
+  var csv='\uFEFF'+[headers].concat(rows).map(function(r){return r.join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='solaredge_派工清單_'+suffix+'_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); closeExportModal();
+}
+
+// ── 管理後台 ──────────────────────────────────────────
+function renderVendors(){
+  var vendors=getVendors();
+  document.getElementById('admin-vendors').innerHTML=vendors.length
+    ?vendors.map(function(v){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:14px">'+
+          '<span>'+v.name+'</span><button class="btn btn-danger btn-sm" onclick="deleteVendor(\''+v.id+'\')">刪除</button></div>';
+      }).join('')
+    :'<p style="font-size:13px;color:#aaa">尚無廠商</p>';
+}
+function addVendor(){
+  var name=prompt('請輸入廠商名稱：');
+  if(!name||!name.trim())return;
+  var vendors=getVendors();
+  vendors.push({id:'v'+Date.now(),name:name.trim()});
+  saveVendors(vendors); renderVendors();
+}
+function deleteVendor(id){
+  if(!confirm('確定刪除此廠商？'))return;
+  saveVendors(getVendors().filter(function(v){return v.id!==id;})); renderVendors();
+}
+function renderUsers(){
+  var users=getUsers();
+  var roleLabel={admin:'管理員',client:'客人',worker:'工班'};
+  var roleClass={admin:'role-admin',client:'role-client',worker:'role-worker'};
+  document.getElementById('admin-users').innerHTML=
+    '<table style="width:100%;border-collapse:collapse;font-size:14px">'+
+    '<thead><tr style="border-bottom:2px solid #e5e5e0;text-align:left">'+
+    '<th style="padding:8px 10px">姓名</th><th style="padding:8px 10px">信箱</th>'+
+    '<th style="padding:8px 10px">角色</th><th style="padding:8px 10px">廠商</th><th style="padding:8px 10px">操作</th></tr></thead>'+
+    '<tbody>'+users.map(function(u){
+      return '<tr style="border-bottom:1px solid #f0f0ec">'+
+        '<td style="padding:8px 10px">'+u.name+'</td>'+
+        '<td style="padding:8px 10px;color:#888;font-size:13px">'+u.email+'</td>'+
+        '<td style="padding:8px 10px"><span class="role-badge '+roleClass[u.role]+'">'+roleLabel[u.role]+'</span></td>'+
+        '<td style="padding:8px 10px;color:#888;font-size:13px">'+(u.company||'—')+'</td>'+
+        '<td style="padding:8px 10px">'+
+        (u.role!=='admin'
+          ?'<select onchange="changeRole(\''+u.id+'\',this.value)" style="font-size:12px;padding:3px 6px;width:auto">'+
+            '<option value="client"'+(u.role==='client'?' selected':'')+'>客人</option>'+
+            '<option value="worker"'+(u.role==='worker'?' selected':'')+'>工班</option></select>'
+          :'<span style="color:#aaa;font-size:13px">—</span>')+
+        '</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function changeRole(uid,role){
+  var users=getUsers();
+  var u=users.find(function(x){return x.id===uid;});
+  if(u){u.role=role; saveUsers(users); renderUsers();}
+}
+
+// ── 意見回饋 ──────────────────────────────────────────
+function submitFeedback(){
+  var name=document.getElementById('fb-name').value.trim();
+  var role=document.getElementById('fb-role').value;
+  var type=document.getElementById('fb-type').value;
+  var content=document.getElementById('fb-content').value.trim();
+  if(!name||!role||!content){showAlert('fb-alert','error','請填寫姓名、角色與意見內容');return;}
+  var fbs=getFeedbacks();
+  fbs.unshift({name:name,role:role,type:type,content:content,time:new Date().toLocaleString('zh-TW')});
+  saveFeedbacks(fbs);
+  ['fb-name','fb-content'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('fb-role').value='';
+  showAlert('fb-alert','success','感謝您的意見！');
+  renderFeedbacks();
+}
+function renderFeedbacks(){
+  var fbs=getFeedbacks();
+  var el=document.getElementById('fb-list');
+  if(!el)return;
+  if(!fbs.length){el.innerHTML='';return;}
+  var colors={功能建議:'#E6F1FB',操作問題:'#FCEBEB',介面改善:'#EAF3DE',欄位調整:'#FAEEDA',其他:'#f5f5f3'};
+  var borders={功能建議:'#B5D4F4',操作問題:'#F7C1C1',介面改善:'#C0DD97',欄位調整:'#F5C4B3',其他:'#e5e5e0'};
+  el.innerHTML='<h3 style="margin-bottom:.75rem;font-size:15px">已收集意見（'+fbs.length+' 則）</h3>'+
+    fbs.map(function(f){
+      return '<div style="border:1px solid '+(borders[f.type]||'#e5e5e0')+';background:'+(colors[f.type]||'#fff')+';border-radius:8px;padding:12px 14px;margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px">'+
+        '<span style="font-weight:600;font-size:14px">'+f.name+' <span style="font-weight:400;color:#888;font-size:13px">('+f.role+')</span></span>'+
+        '<span style="font-size:12px;color:#aaa">'+f.time+'</span></div>'+
+        '<div style="margin-bottom:6px"><span style="font-size:12px;background:#fff;border:1px solid #e5e5e0;border-radius:4px;padding:2px 8px">'+f.type+'</span></div>'+
+        '<div style="font-size:14px;color:#444;line-height:1.6;white-space:pre-wrap">'+f.content+'</div></div>';
+    }).join('');
+}
+
+// ── 歡迎視窗 ──────────────────────────────────────────
+function closeWelcome(){document.getElementById('welcome-modal').classList.add('hidden');}
+
+// ── 啟動 ──────────────────────────────────────────────
+initDemo();
+</script>
+</body>
+</html>
