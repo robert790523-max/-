@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SolarEdge 派工系統</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+:root{
+  --primary:#0052A5;--primary-dark:#003d7a;
+  --navy:#001446;--navy2:#001f6b;
+  --success:#1a9e5c;--warning:#d97706;--danger:#dc2626;--purple:#7c3aed;
+  --bg:#F4F6F9;--card:#fff;--border:#D8DDE6;--text:#1d1d1f;--muted:#5E6878;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ── LOGIN ── */
+#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--navy);padding:24px}
+.welcome-banner{text-align:center;color:#fff;margin-bottom:32px;max-width:540px}
+.welcome-banner h1{font-size:30px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+.welcome-banner h1 span{color:var(--primary)}
+.welcome-banner p{font-size:14px;opacity:.7;line-height:1.7;font-weight:300}
+.demo-cards{display:flex;gap:8px;margin-bottom:20px;max-width:500px;width:100%}
+.demo-card{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;color:#fff;transition:all .18s}
+.demo-card:hover{background:rgba(255,255,255,.14);border-color:var(--primary)}
+.demo-card.sel{background:rgba(247,148,29,.15);border-color:var(--primary);border-width:2px}
+.demo-card .dc-icon{font-size:20px;margin-bottom:5px}
+.demo-card .dc-role{font-size:12px;font-weight:600;letter-spacing:.3px;margin-bottom:3px}
+.demo-card .dc-email{font-size:10px;opacity:.5}
+.login-card{background:#fff;border-radius:8px;padding:32px;width:400px;max-width:95vw}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo h1{font-size:18px;color:var(--text);font-weight:600}
+.login-logo p{color:var(--muted);font-size:12px;margin-top:4px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{flex:1;padding:9px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:color .2s}
+.tab.active{color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-1px;font-weight:600}
+
+/* ── NAV ── */
+nav{background:var(--navy);height:52px;display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--primary)}
+.nav-brand{font-size:15px;font-weight:700;color:#fff;margin-right:20px;white-space:nowrap;letter-spacing:.3px}
+.nav-brand span{color:var(--primary)}
+.nav-links{display:flex;flex:1;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{padding:0 14px;height:52px;display:flex;align-items:center;cursor:pointer;font-size:13px;color:rgba(255,255,255,.65);white-space:nowrap;transition:all .18s;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px}
+.nav-link:hover{color:#fff;border-bottom-color:rgba(255,255,255,.3)}
+.nav-link.active{color:#fff;border-bottom-color:var(--primary)}
+.nav-user{display:flex;align-items:center;gap:10px;margin-left:auto;font-size:12px;color:rgba(255,255,255,.6)}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;transition:all .18s}
+.logout-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ── MAIN ── */
+main{padding:24px;max-width:1080px;margin:0 auto}
+
+/* ── CARD ── */
+.card{background:var(--card);border-radius:6px;padding:24px;border:1px solid var(--border);margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:18px;color:var(--text);letter-spacing:-.1px}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=datetime-local],select,textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:inherit;outline:none;transition:border-color .18s;background:#fff;color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(247,148,29,.1)}
+textarea{resize:vertical;min-height:72px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 18px;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:500;transition:all .18s;display:inline-flex;align-items:center;gap:5px;letter-spacing:.1px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-secondary{background:var(--navy);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--text);color:var(--text)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-full{width:100%;justify-content:center}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg);font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.2px}
+.b-assigned{background:#EBF4FF;color:#1B5EA8}
+.b-inprogress{background:#FEF3E2;color:#9A5C0A}
+.b-completed{background:#E6F5ED;color:#1A6B3C}
+.b-returned{background:#FEECEC;color:#9B1C1C}
+.b-supp{background:#F0EBFF;color:#5B21B6}
+.b-admin{background:#EBF4FF;color:#1B5EA8}
+.b-worker{background:#E6F5ED;color:#1A6B3C}
+.b-client{background:#F4F6F9;color:#4B5563}
+
+/* ── MISC ── */
+.section{display:none}.section.active{display:block}
+.alert{padding:10px 14px;border-radius:5px;margin-bottom:14px;font-size:13px}
+.alert-err{background:#FEECEC;color:#9B1C1C;border-left:3px solid var(--danger)}
+.alert-ok{background:#E6F5ED;color:#1A6B3C;border-left:3px solid var(--success)}
+.alert-info{background:#EBF4FF;color:#1B5EA8;border-left:3px solid #3B82F6}
+.s-row{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.s-old{flex:1;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:5px;font-size:13px;color:var(--muted)}
+.drag-h{cursor:grab;color:var(--muted);font-size:18px;padding:0 2px;user-select:none}
+.drag-h:active{cursor:grabbing}
+.dragging{opacity:.4}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-top:10px}
+.ph-wrap{position:relative;display:inline-block;width:100%}
+.ph-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:border-color .18s;display:block}
+.ph-thumb:hover{border-color:var(--primary)}
+.ph-del{position:absolute;top:4px;right:4px;background:rgba(11,36,71,.7);color:#fff;border:none;border-radius:3px;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.ph-wrap:hover .ph-del{opacity:1}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;align-items:center;justify-content:center}
+.lb.open{display:flex}
+.lb img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:4px}
+.lb-close{position:absolute;top:16px;right:20px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;line-height:1;opacity:.7}
+.lb-close:hover{opacity:1}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:8px;padding:32px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:18px;color:var(--text)}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.upload-box{border:1px dashed var(--border);border-radius:5px;padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:all .18s;background:var(--bg)}
+.upload-box:hover{border-color:var(--primary);color:var(--primary);background:#fff}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+.info-item label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px}
+.info-item p{font-size:14px;color:var(--text)}
+hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+.flex{display:flex}.items-c{align-items:center}.gap8{gap:8px}.gap10{gap:10px}.jc-sb{justify-content:space-between}.wrap{flex-wrap:wrap}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.muted{color:var(--muted);font-size:13px}
+.case-link{color:var(--primary);cursor:pointer;font-weight:500}.case-link:hover{color:var(--primary-dark)}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-hdr h2{font-size:18px;font-weight:600;color:var(--text)}
+
+/* ── WELCOME MODAL ── */
+.wm-header{background:var(--navy);margin:-32px -32px 24px;padding:28px 32px;border-radius:8px 8px 0 0}
+.wm-logo{font-size:20px;font-weight:700;color:#fff;letter-spacing:.3px}
+.wm-logo span{color:var(--primary)}
+.wm-sub{color:rgba(255,255,255,.6);font-size:12px;margin-top:4px}
+.wm-features{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.wm-feat{background:var(--bg);border-radius:5px;padding:12px 14px;border-left:3px solid var(--primary)}
+.wm-feat strong{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
+.wm-feat span{font-size:11px;color:var(--muted)}
+
+@media(max-width:768px){
+  /* NAV — 兩列：第一列品牌+用戶，第二列連結 */
+  nav{padding:0 12px;height:auto;flex-wrap:wrap;padding-top:10px;padding-bottom:0;gap:0}
+  .nav-brand{font-size:13px;margin-right:auto}
+  .nav-links{width:100%;order:3;overflow-x:auto;scrollbar-width:none;padding-bottom:0;border-top:1px solid rgba(255,255,255,.1);margin-top:6px}
+  .nav-links::-webkit-scrollbar{display:none}
+  .nav-link{padding:0 12px;height:38px;font-size:12px}
+  .nav-user{font-size:11px;gap:6px;margin-left:0}
+  .logout-btn{padding:3px 10px;font-size:11px}
+
+  /* LOGIN */
+  .welcome-banner h1{font-size:22px}
+  .welcome-banner p{font-size:13px}
+  .demo-cards{flex-wrap:wrap}
+  .demo-card{min-width:calc(33% - 6px);flex:1 1 calc(33% - 6px)}
+  .login-card{padding:20px 16px;width:100%;max-width:100%}
+
+  /* MAIN */
+  main{padding:12px}
+  .card{padding:16px}
+
+  /* GRIDS */
+  .row2,.row3,.info-grid,.wm-features{grid-template-columns:1fr}
+
+  /* TABLES */
+  table{font-size:12px}
+  th,td{padding:8px 6px}
+
+  /* MODAL */
+  .modal{padding:20px 16px;width:96vw}
+  .modal-acts{flex-wrap:wrap}
+
+  /* MAPPING TABLE */
+  .nw-inp{min-width:80px}
+}
+@media(max-width:480px){
+  .demo-card{min-width:100%;flex:1 1 100%}
+  .welcome-banner h1{font-size:18px}
+  .btn{font-size:12px;padding:7px 12px}
+  .section-title{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+
+  <!-- 歡迎標語 -->
+  <div class="welcome-banner">
+    <h1>SolarEdge <span>派工管理系統</span></h1>
+    <p>整合派工建立、施工進度追蹤、AI 照片序號辨識與完工回報<br>讓太陽能工程管理更有效率</p>
+  </div>
+
+  <!-- 示範角色快選 -->
+  <div class="demo-cards">
+    <div class="demo-card" id="dc-admin"
+      onclick="document.querySelectorAll('.demo-card').forEach(c=>c.classList.remove('sel'));this.classList.add('sel');document.getElementById('li-email').value='admin@solaredge.com';document.getElementById('li-pw').value='admin123';document.getElementById('li-err').style.display='none';document.getElementById('login-form').style.display='block';document.getElementById('reg-form').style.display='none';">
+      <div class="dc-icon">👨‍💼</div>
+      <div class="dc-role">管理員</div>
+      <div class="dc-email">admin@solaredge.com</div>
+    </div>
+    <div class="demo-card" id="dc-worker"
+      onclick="document.querySelectorAll('.demo-card').forEach(c=>c.classList.remove('sel'));this.classList.add('sel');document.getElementById('li-email').value='worker@crew.com';document.getElementById('li-pw').value='worker123';document.getElementById('li-err').style.display='none';document.getElementById('login-form').style.display='block';document.getElementById('reg-form').style.display='none';">
+      <div class="dc-icon">🔧</div>
+      <div class="dc-role">工班</div>
+      <div class="dc-email">worker@crew.com</div>
+    </div>
+    <div class="demo-card" id="dc-client"
+      onclick="document.querySelectorAll('.demo-card').forEach(c=>c.classList.remove('sel'));this.classList.add('sel');document.getElementById('li-email').value='client@abc.com';document.getElementById('li-pw').value='client123';document.getElementById('li-err').style.display='none';document.getElementById('login-form').style.display='block';document.getElementById('reg-form').style.display='none';">
+      <div class="dc-icon">🏢</div>
+      <div class="dc-role">客人</div>
+      <div class="dc-email">client@abc.com</div>
+    </div>
+  </div>
+
+  <div class="login-card">
+    <div class="login-logo"><h1>登入系統</h1><p>或點選上方角色卡片快速體驗示範</p></div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">登入</div>
+      <div class="tab" onclick="switchTab('register')">註冊</div>
+    </div>
+    <div id="login-form">
+      <div class="form-group"><label>電子信箱</label><input type="email" id="li-email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>密碼</label><input type="password" id="li-pw" placeholder="••••••" onkeydown="if(event.key==='Enter')login()"></div>
+      <div id="li-err" class="alert alert-err" style="display:none"></div>
+      <button class="btn btn-primary btn-full" onclick="login()">登入</button>
+    </div>
+    <div id="reg-form" style="display:none">
+      <div class="form-group"><label>姓名</label><input type="text" id="rg-name" placeholder="王小明"></div>
+      <div class="form-group"><label>電子信箱</label><input type="email" id="rg-email" placeholder="your@email.com"></div>
+      <div class="form-group"><label>密碼</label><input type="password" id="rg-pw" placeholder="至少6位"></div>
+      <div class="form-group" id="rg-vendor-wrap">
+        <label>所屬廠商</label><select id="rg-vendor"></select>
+      </div>
+      <div id="rg-err" class="alert alert-err" style="display:none"></div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">註冊</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <nav>
+    <div class="nav-brand">Solar<span>Edge</span> 派工系統</div>
+    <div class="nav-links" id="nav-links"></div>
+    <div class="nav-user">
+      <span id="nav-who"></span>
+      <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+  </nav>
+  <main>
+
+    <!-- INSTRUCTIONS -->
+    <div id="sec-instructions" class="section">
+      <div class="card">
+        <div class="card-title">操作說明</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+          <div style="background:var(--bg);border-radius:5px;padding:14px;border-left:3px solid #1B5EA8">
+            <div style="font-size:11px;font-weight:600;color:#1B5EA8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">管理員</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7">建立派工、指派工班<br>管理帳號與廠商<br>補簽後補案件<br>匯出報表</div>
+          </div>
+          <div style="background:var(--bg);border-radius:5px;padding:14px;border-left:3px solid #1A6B3C">
+            <div style="font-size:11px;font-weight:600;color:#1A6B3C;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">工班</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7">查看派工案件<br>填寫序號對照<br>上傳完工照片（AI辨識）<br>標記完工 / 後補建檔<br>匯出報表</div>
+          </div>
+          <div style="background:var(--bg);border-radius:5px;padding:14px;border-left:3px solid #6B7A8D">
+            <div style="font-size:11px;font-weight:600;color:#6B7A8D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">客人</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7">查看自己廠商案件<br>填寫案場資訊及聯絡人<br>查看施工進度<br>瀏覽完工照片</div>
+          </div>
+        </div>
+
+        <hr>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">權限說明</div>
+        <div style="overflow-x:auto;margin-bottom:16px">
+          <table style="min-width:480px">
+            <thead><tr>
+              <th>功能</th>
+              <th style="text-align:center">管理員</th>
+              <th style="text-align:center">工班</th>
+              <th style="text-align:center">客人</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>建立 / 刪除派工</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>查看所有案件</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>查看自己負責案件</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>查看廠商案件</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#1a9e5c">✓</td></tr>
+              <tr><td>填寫案場資訊</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#1a9e5c">✓</td></tr>
+              <tr><td>更新施工進度 / 序號</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>上傳完工照片</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>補簽後補派工</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>管理帳號 / 廠商</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+              <tr><td>匯出 Excel</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#1a9e5c">✓</td><td style="text-align:center;color:#dc2626">✕</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <hr>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">標準派工流程</div>
+        <div style="display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:12px;line-height:1.6;color:var(--text);min-width:110px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:3px">1</div>
+              管理員建立派工<br><span style="color:var(--muted);font-size:11px">自動 Email 通知工班</span>
+            </div>
+            <div style="color:var(--border);font-size:18px;padding:0 2px">›</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:12px;line-height:1.6;color:var(--text);min-width:110px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:3px">2</div>
+              客人填寫案場資訊<br><span style="color:var(--muted);font-size:11px">地址、聯絡人</span>
+            </div>
+            <div style="color:var(--border);font-size:18px;padding:0 2px">›</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:12px;line-height:1.6;color:var(--text);min-width:110px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:3px">3</div>
+              工班更新進度<br><span style="color:var(--muted);font-size:11px">序號對照、預計時間</span>
+            </div>
+            <div style="color:var(--border);font-size:18px;padding:0 2px">›</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:12px;line-height:1.6;color:var(--text);min-width:110px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:3px">4</div>
+              工班上傳照片<br><span style="color:var(--muted);font-size:11px">AI 自動辨識序號</span>
+            </div>
+            <div style="color:var(--border);font-size:18px;padding:0 2px">›</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:12px;line-height:1.6;color:var(--text);min-width:110px;text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:3px">5</div>
+              工班標記完工<br><span style="color:var(--muted);font-size:11px">Email 通知廠商客人</span>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">後補派工流程</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.8">工班先施工後建檔 → 系統自動通知所有管理員補簽 → 管理員進入案件點「補簽確認」→ 系統通知工班完成。</p>
+
+        <hr>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">AI 照片序號辨識</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.8">上傳完工照片後，系統自動掃描 QR Code 及印刷序號，辨識結果以可點選清單顯示。點擊填入序號欄位，× 移除雜訊，亦可手動輸入修改。建議拍攝時確保序號清晰、光線充足以提升辨識率。</p>
+
+        <hr>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">示範帳號</div>
+        <table>
+          <tr><th>角色</th><th>信箱</th><th>密碼</th></tr>
+          <tr><td>管理員</td><td>admin@solaredge.com</td><td>admin123</td></tr>
+          <tr><td>客人</td><td>client@abc.com</td><td>client123</td></tr>
+          <tr><td>工班</td><td>worker@crew.com</td><td>worker123</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- CREATE DISPATCH -->
+    <div id="sec-create" class="section">
+      <div class="card">
+        <div class="card-title" id="create-title">＋ 建立派工</div>
+        <div class="row2">
+          <div class="form-group"><label>派工日期</label><input type="date" id="cd-date"></div>
+          <div class="form-group"><label>CASE 編號</label><input type="text" id="cd-case" placeholder="SE-2024-001"></div>
+        </div>
+        <div class="form-group"><label>案場名稱</label><input type="text" id="cd-site" placeholder="台南某某工廠"></div>
+        <div class="form-group">
+          <label>舊序號 <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="addOldSerial()">＋ 新增舊序號</button></label>
+          <div id="old-serial-list" class="mt8"></div>
+        </div>
+        <div class="form-group"><label>作業內容</label><textarea id="cd-content" rows="3" placeholder="請描述作業內容..."></textarea></div>
+
+        <!-- Admin fields -->
+        <div id="cd-admin-fields" class="row2">
+          <div class="form-group"><label>指派工班</label><select id="cd-worker"></select></div>
+          <div class="form-group"><label>可見廠商</label><select id="cd-vendor"></select></div>
+        </div>
+
+        <!-- Worker supplementary fields -->
+        <div id="cd-worker-fields" style="display:none">
+          <div class="row2">
+            <div class="form-group"><label>完工時間 <span style="color:red">*</span></label><input type="datetime-local" id="cd-complete-time"></div>
+          </div>
+          <div class="form-group"><label>施工備注</label><textarea id="cd-notes" rows="3"></textarea></div>
+          <div class="form-group">
+            <label>完工照片</label>
+            <div class="upload-box" onclick="$('cd-photo-in').click()">點擊上傳照片<input type="file" id="cd-photo-in" accept="image/*" multiple style="display:none" onchange="handleSuppPhotos(event)"></div>
+            <div id="cd-photo-grid" class="photo-grid"></div>
+          </div>
+        </div>
+
+        <div id="cd-err" class="alert alert-err" style="display:none"></div>
+        <div class="flex gap8 mt16 wrap">
+          <button class="btn btn-primary" onclick="submitDispatch()">送出派工</button>
+          <button class="btn btn-outline" onclick="resetCreate()">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS LIST -->
+    <div id="sec-progress" class="section">
+      <div class="sec-hdr">
+        <h2>進度及完工</h2>
+        <button class="btn btn-outline btn-sm" onclick="openExportModal()">📊 匯出 Excel</button>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="flex gap8 wrap">
+          <input type="text" id="fl-search" placeholder="搜尋案件..." style="width:200px" oninput="renderList()">
+          <select id="fl-status" style="width:150px" onchange="renderList()">
+            <option value="">所有狀態</option>
+            <option>已指派工班</option><option>施工中</option><option>已完工</option><option>已退回</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>CASE</th><th>案場</th><th>派工日期</th><th>廠商</th><th>工班</th><th>完工時間</th><th>狀態</th></tr></thead>
+            <tbody id="list-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE DETAIL -->
+    <div id="sec-detail" class="section">
+      <div class="sec-hdr">
+        <h2 id="detail-title">案件詳情</h2>
+        <button class="btn btn-outline btn-sm" onclick="showSec('progress')">← 返回列表</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="sec-admin" class="section">
+      <h2 style="margin-bottom:18px">管理後台</h2>
+      <div class="card">
+        <div class="flex jc-sb items-c" style="margin-bottom:14px">
+          <div class="card-title" style="margin:0">廠商管理</div>
+          <button class="btn btn-sm btn-primary" onclick="addVendor()">＋ 新增廠商</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>廠商名稱</th><th>操作</th></tr></thead>
+          <tbody id="vendor-body"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">帳號管理</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>姓名</th><th>信箱</th><th>角色</th><th>公司</th><th>操作</th></tr></thead>
+          <tbody id="account-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- WELCOME MODAL -->
+<div id="welcome-modal" class="modal-bg">
+  <div class="modal" style="width:520px;padding:0;overflow:hidden">
+    <div class="wm-header">
+      <div class="wm-logo">Solar<span>Edge</span> 派工管理系統</div>
+      <div class="wm-sub">示範版 Demo — 資料存於記憶體，重整後還原</div>
+    </div>
+    <div style="padding:24px 28px">
+      <p style="font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:18px">
+        這是 SolarEdge 太陽能工程派工管理平台的示範系統，整合三種角色的作業流程，讓派工、施工回報、客戶查詢一站完成。
+      </p>
+      <div class="wm-features">
+        <div class="wm-feat"><strong>派工建立與指派</strong><span>管理員快速建立並通知工班</span></div>
+        <div class="wm-feat"><strong>序號對照追蹤</strong><span>舊序號 → 新序號完整記錄</span></div>
+        <div class="wm-feat"><strong>AI 照片序號辨識</strong><span>上傳照片自動抓取序號</span></div>
+        <div class="wm-feat"><strong>客戶進度查詢</strong><span>廠商客人即時掌握施工狀況</span></div>
+        <div class="wm-feat"><strong>完工照片管理</strong><span>縮圖預覽、全螢幕放大</span></div>
+        <div class="wm-feat"><strong>匯出 Excel 報表</strong><span>篩選日期、狀態一鍵匯出</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:4px">
+        登入頁可直接點選角色卡片快速體驗各角色功能。未來將接 Google Sheets 作為資料庫，支援 Email 自動通知（已整合 EmailJS）。
+      </p>
+      <div class="modal-acts">
+        <button class="btn btn-primary" onclick="closeWelcome()" style="min-width:120px">開始體驗 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lb" class="lb" onclick="closeLb()">
+  <button class="lb-close" onclick="closeLb()">✕</button>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="export-modal" class="modal-bg">
+  <div class="modal">
+    <div class="modal-title">📊 匯出 Excel (CSV)</div>
+    <div class="row2">
+      <div class="form-group"><label>開始日期</label><input type="date" id="ex-start"></div>
+      <div class="form-group"><label>結束日期</label><input type="date" id="ex-end"></div>
+    </div>
+    <div class="form-group">
+      <label>狀態篩選</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:14px">
+        <label><input type="checkbox" class="ex-status" value="已指派工班" checked> 已指派工班</label>
+        <label><input type="checkbox" class="ex-status" value="施工中" checked> 施工中</label>
+        <label><input type="checkbox" class="ex-status" value="已完工" checked> 已完工</label>
+        <label><input type="checkbox" class="ex-status" value="已退回" checked> 已退回</label>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-outline" onclick="closeExportModal()">取消</button>
+      <button class="btn btn-primary" onclick="doExport()">匯出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── localStorage 安全存取（file:// 環境下會被封鎖）────────────
+const _lsMem = {}; // 記憶體備援
+function safeLS(action, key, val) {
+  try {
+    if(action==='get') return localStorage.getItem(key);
+    if(action==='set') { localStorage.setItem(key, val); _lsMem[key]=val; }
+  } catch(e) {
+    if(action==='get') return _lsMem[key]||null;
+    if(action==='set') _lsMem[key]=val;
+  }
+}
+
+// ── EmailJS ──────────────────────────────────────────────────
+try { emailjs.init('gqe2Z0sC8LeTIUqHS'); } catch(e) { console.warn('EmailJS not loaded'); }
+
+// ── DATA ─────────────────────────────────────────────────────
+let vendors = [
+  {id:'v1',name:'ABC太陽能開發'},
+  {id:'v2',name:'新日光能源'},
+  {id:'v3',name:'綠能科技股份'}
+];
+
+let users = [
+  {id:'u1',name:'系統管理員',email:'admin@solaredge.com',password:'admin123',role:'admin',company:'SolarEdge'},
+  {id:'u2',name:'陳大明',email:'client@abc.com',password:'client123',role:'client',company:'ABC太陽能開發'},
+  {id:'u3',name:'李師傅',email:'worker@crew.com',password:'worker123',role:'worker',company:'優質工班'}
+];
+
+let cases = [
+  {id:'c1',caseNo:'SE-2024-001',siteName:'台南某某工廠',
+   oldSerials:['019106BB9-4D','019107CC2-1A'],
+   content:'更換逆變器、重新接線',siteInfo:'台南市仁德區工業路1號，聯絡人：王廠長 0912-345-678',
+   assignedWorker:'u3',visibleVendor:'v1',date:'2024-01-15',status:'施工中',
+   isSupp:false,signedBy:null,
+   progress:{estimatedTime:'2024-01-16T09:00',completionTime:'',notes:'已完成逆變器更換，接線中',photos:[],
+     serialMappings:[{old:'019106BB9-4D',nw:'NEW-20240116-001'},{old:'019107CC2-1A',nw:''}]}},
+  {id:'c2',caseNo:'SE-2024-002',siteName:'高雄某太陽能案場',
+   oldSerials:['020201AA5-3B'],
+   content:'年度維護保養',siteInfo:'',
+   assignedWorker:'u3',visibleVendor:'v2',date:'2024-02-01',status:'已指派工班',
+   isSupp:false,signedBy:null,
+   progress:{estimatedTime:'',completionTime:'',notes:'',photos:[],
+     serialMappings:[{old:'020201AA5-3B',nw:''}]}},
+  {id:'c3',caseNo:'SE-2024-003',siteName:'屏東綠能農場',
+   oldSerials:['030301DD8-7C','030302EE9-2F'],
+   content:'故障排除、模組清洗',siteInfo:'屏東縣內埔鄉，聯絡人：張農夫 0933-777-888',
+   assignedWorker:'u3',visibleVendor:'v1',date:'2024-03-01',status:'已完工',
+   isSupp:false,signedBy:null,
+   progress:{estimatedTime:'2024-03-02T08:00',completionTime:'2024-03-02T16:30',
+     notes:'故障排除完畢，模組清洗完成，系統恢復正常運作',photos:[],
+     serialMappings:[{old:'030301DD8-7C',nw:'NEW-20240302-001'},{old:'030302EE9-2F',nw:'NEW-20240302-002'}]}}
+];
+
+let cu = null; // current user
+let suppPhotos = [];
+let detailPhotos = [];
+let chips = [];
+let currentDetailId = null;
+
+// ── UTILS ─────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function gid() { return 'id-'+Date.now()+'-'+Math.random().toString(36).substr(2,8); }
+function fdt(s) { return s ? s.replace('T',' ') : '-'; }
+function vendorName(id) { const v=vendors.find(x=>x.id===id); return v?v.name:'-'; }
+function userName(id) { const u=users.find(x=>x.id===id); return u?u.name:'-'; }
+function roleLabel(r) { return {admin:'管理員',client:'客人',worker:'工班'}[r]||r; }
+function statusBadge(status,isSupp) {
+  const map={  '已指派工班':'b-assigned','施工中':'b-inprogress','已完工':'b-completed','已退回':'b-returned'};
+  let h=`<span class="badge ${map[status]||''}">${status}</span>`;
+  if(isSupp) h+=` <span class="badge b-supp">後補</span>`;
+  return h;
+}
+function adminUsers() { return users.filter(u=>u.role==='admin'); }
+function workerUsers() { return users.filter(u=>u.role==='worker'); }
+function clientsByVendor(vname) { return users.filter(u=>u.role==='client'&&u.company===vname); }
+function visibleCases() {
+  if(cu.role==='admin') return cases;
+  if(cu.role==='worker') return cases.filter(c=>c.assignedWorker===cu.id);
+  if(cu.role==='client') return cases.filter(c=>{ const v=vendors.find(x=>x.id===c.visibleVendor); return v&&v.name===cu.company; });
+  return [];
+}
+
+// ── DEMO ROLE SELECT ─────────────────────────────────────────
+const demoAccounts = {
+  admin:  { email:'admin@solaredge.com',  password:'admin123'  },
+  worker: { email:'worker@crew.com',      password:'worker123' },
+  client: { email:'client@abc.com',       password:'client123' }
+};
+function selectDemo(role) {
+  // highlight card
+  document.querySelectorAll('.demo-card').forEach(c=>c.classList.remove('sel'));
+  const card = document.getElementById('dc-'+role);
+  if(card) card.classList.add('sel');
+  // fill login fields
+  const acc = demoAccounts[role];
+  document.getElementById('li-email').value = acc.email;
+  document.getElementById('li-pw').value    = acc.password;
+  document.getElementById('li-err').style.display = 'none';
+  // switch to login tab if currently on register
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('reg-form').style.display   = 'none';
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===0));
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register')));
+  $('login-form').style.display=t==='login'?'block':'none';
+  $('reg-form').style.display=t==='register'?'block':'none';
+  if(t==='register') fillVendorSel('rg-vendor');
+}
+function fillVendorSel(id) {
+  $(id).innerHTML=vendors.map(v=>`<option value="${v.name}">${v.name}</option>`).join('');
+}
+function login() {
+  const email=$('li-email').value.trim(), pw=$('li-pw').value;
+  const u=users.find(x=>x.email===email&&x.password===pw);
+  if(!u){$('li-err').textContent='信箱或密碼錯誤';$('li-err').style.display='block';return;}
+  cu=u; startApp();
+}
+function doRegister() {
+  const name=$('rg-name').value.trim(),email=$('rg-email').value.trim(),pw=$('rg-pw').value,vendor=$('rg-vendor').value;
+  const err=el=>{ $('rg-err').textContent=el;$('rg-err').style.display='block'; };
+  if(!name||!email||!pw){err('請填寫所有欄位');return;}
+  if(pw.length<6){err('密碼至少6位');return;}
+  if(users.find(u=>u.email===email)){err('此信箱已被註冊');return;}
+  const role=email.endsWith('@solaredge.com')?'admin':'client';
+  const company=role==='admin'?'SolarEdge':vendor;
+  cu={id:gid(),name,email,password:pw,role,company};
+  users.push(cu); startApp();
+}
+function logout() {
+  cu=null;
+  $('login-screen').style.display='flex';
+  $('app').style.display='none';
+}
+function startApp() {
+  $('login-screen').style.display='none';
+  $('app').style.display='block';
+  $('nav-who').textContent=`${cu.name}（${roleLabel(cu.role)}）`;
+  renderNav();
+  showSec('progress');
+  $('welcome-modal').classList.add('open');
+}
+function closeWelcome() { $('welcome-modal').classList.remove('open'); }
+
+
+// ── NAV ───────────────────────────────────────────────────────
+function renderNav() {
+  const links=[
+    {id:'instructions',label:'📖 操作說明',roles:['admin','client','worker']},
+    {id:'create',label:cu.role==='worker'?'＋ 後補派工':'＋ 建立派工',roles:['admin','worker']},
+    {id:'progress',label:'進度及完工',roles:['admin','client','worker']},
+    {id:'admin',label:'管理後台',roles:['admin']}
+  ];
+  $('nav-links').innerHTML=links.filter(l=>l.roles.includes(cu.role))
+    .map(l=>`<button class="nav-link" id="nl-${l.id}" onclick="showSec('${l.id}')">${l.label}</button>`)
+    .join('');
+}
+function showSec(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  const s=$(`sec-${id}`); if(s) s.classList.add('active');
+  const nl=$(`nl-${id}`); if(nl) nl.classList.add('active');
+  if(id==='progress') renderList();
+  if(id==='admin') renderAdmin();
+  if(id==='create') initCreate();
+}
+
+// ── CREATE DISPATCH ───────────────────────────────────────────
+function initCreate() {
+  const isW=cu.role==='worker';
+  $('create-title').textContent=isW?'＋ 後補派工':'＋ 建立派工';
+  $('cd-admin-fields').style.display=isW?'none':'grid';
+  $('cd-worker-fields').style.display=isW?'block':'none';
+  if(!isW) {
+    $('cd-worker').innerHTML=workerUsers().map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+    $('cd-vendor').innerHTML=vendors.map(v=>`<option value="${v.id}">${v.name}</option>`).join('');
+  }
+  $('cd-date').value=new Date().toISOString().split('T')[0];
+  $('old-serial-list').innerHTML='';
+  addOldSerial();
+  suppPhotos=[];
+  $('cd-photo-grid').innerHTML='';
+  $('cd-err').style.display='none';
+}
+function addOldSerial() {
+  const d=document.createElement('div');
+  d.className='s-row';
+  d.innerHTML=`<input type="text" style="flex:1" placeholder="舊序號">
+    <button class="btn btn-sm btn-outline" style="padding:6px 9px" onclick="this.parentElement.remove()">✕</button>`;
+  $('old-serial-list').appendChild(d);
+}
+function getOldSerials() {
+  return [...document.querySelectorAll('#old-serial-list input')].map(i=>i.value.trim()).filter(Boolean);
+}
+function handleSuppPhotos(ev) {
+  [...ev.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      suppPhotos.push({name:f.name,dataUrl:e.target.result});
+      const img=document.createElement('img');
+      img.src=e.target.result; img.className='ph-thumb';
+      img.onclick=()=>openLb(e.target.result);
+      $('cd-photo-grid').appendChild(img);
+    };
+    r.readAsDataURL(f);
+  });
+}
+function submitDispatch() {
+  const date=$('cd-date').value,caseNo=$('cd-case').value.trim(),
+        siteName=$('cd-site').value.trim(),
+        content=$('cd-content').value.trim(),
+        oldSerials=getOldSerials();
+  const showErr=msg=>{$('cd-err').textContent=msg;$('cd-err').style.display='block';};
+  $('cd-err').style.display='none';
+  if(!date||!caseNo||!siteName){showErr('請填寫日期、CASE編號、案場名稱');return;}
+
+  if(cu.role==='worker') {
+    const ct=$('cd-complete-time').value;
+    if(!ct){showErr('請填寫完工時間');return;}
+    const nc={id:gid(),caseNo,siteName,oldSerials,content,siteInfo:'',
+      assignedWorker:cu.id,visibleVendor:'',date,status:'已完工',isSupp:true,signedBy:null,
+      progress:{estimatedTime:'',completionTime:ct,notes:$('cd-notes').value.trim(),
+        photos:suppPhotos.slice(),serialMappings:oldSerials.map(o=>({old:o,nw:''}))}};
+    cases.push(nc);
+    adminUsers().forEach(a=>sendEmail(a.email,a.name,`後補派工通知：${caseNo}`,
+      `工班 ${cu.name} 建立了後補案件 ${caseNo}（${siteName}），請至系統補簽確認。`));
+    alert('後補派工已建立，已通知管理員！');
+    suppPhotos=[]; showSec('progress');
+  } else {
+    const wid=$('cd-worker').value, vid=$('cd-vendor').value;
+    const nc={id:gid(),caseNo,siteName,oldSerials,content,siteInfo:'',
+      assignedWorker:wid,visibleVendor:vid,date,status:'已指派工班',isSupp:false,signedBy:null,
+      progress:{estimatedTime:'',completionTime:'',notes:'',photos:[],
+        serialMappings:oldSerials.map(o=>({old:o,nw:''}))}};
+    cases.push(nc);
+    const w=users.find(u=>u.id===wid);
+    if(w) sendEmail(w.email,w.name,`新派工：${caseNo}`,
+      `您有新派工。\nCASE：${caseNo}\n案場：${siteName}\n日期：${date}\n${content}`);
+    alert('派工建立成功！');
+    showSec('progress');
+  }
+}
+function resetCreate() { initCreate(); }
+
+// ── CASE LIST ─────────────────────────────────────────────────
+function renderList() {
+  const q=($('fl-search').value||'').toLowerCase(), sf=$('fl-status').value;
+  const filtered=visibleCases().filter(c=>{
+    if(sf&&c.status!==sf) return false;
+    if(q&&!`${c.caseNo} ${c.siteName}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const tbody=$('list-body');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">無案件資料</td></tr>';return;}
+  tbody.innerHTML=filtered.map(c=>`<tr>
+    <td><span class="case-link" onclick="openDetail('${c.id}')">${c.caseNo}</span></td>
+    <td>${c.siteName}</td><td>${c.date}</td>
+    <td>${vendorName(c.visibleVendor)}</td><td>${userName(c.assignedWorker)}</td>
+    <td>${fdt(c.progress.completionTime)}</td><td>${statusBadge(c.status,c.isSupp)}</td>
+  </tr>`).join('');
+}
+
+// ── CASE DETAIL ───────────────────────────────────────────────
+function openDetail(cid) {
+  const c=cases.find(x=>x.id===cid);
+  if(!c) return;
+  currentDetailId=cid;
+  detailPhotos=[...(c.progress.photos||[])];
+  chips=[];
+
+  const isWorker=cu.role==='worker'&&c.assignedWorker===cu.id;
+  const isAdmin=cu.role==='admin';
+  const canEdit=(isWorker||isAdmin)&&c.status!=='已退回';
+
+  $('detail-title').textContent=`${c.caseNo} — ${c.siteName}`;
+
+  let h='';
+
+  const isClient = cu.role==='client';
+  // Dispatch info
+  h+=`<div class="card">
+    <div class="card-title">派工資訊</div>
+    <div class="info-grid">
+      <div class="info-item"><label>CASE 編號</label><p>${c.caseNo}</p></div>
+      <div class="info-item"><label>案場名稱</label><p>${c.siteName}</p></div>
+      <div class="info-item"><label>派工日期</label><p>${c.date}</p></div>
+      <div class="info-item"><label>可見廠商</label><p>${vendorName(c.visibleVendor)}</p></div>
+      <div class="info-item"><label>指派工班</label><p>${userName(c.assignedWorker)}</p></div>
+      <div class="info-item"><label>狀態</label><p>${statusBadge(c.status,c.isSupp)}</p></div>
+      ${c.isSupp?`<div class="info-item"><label>補簽狀態</label><p>${c.signedBy?'已補簽（'+userName(c.signedBy)+'）':'待補簽'}</p></div>`:''}
+    </div>
+    <div class="mt8"><label style="font-size:11px;color:var(--muted);font-weight:600">作業內容</label><p style="margin-top:4px;white-space:pre-wrap;font-size:14px">${c.content}</p></div>
+    <div class="mt8">
+      <label style="font-size:11px;color:var(--muted);font-weight:600">
+        案場資訊及聯絡人
+        ${isClient?'<span style="color:var(--primary);font-weight:400;font-size:11px">（您可填寫）</span>':''}
+      </label>
+      ${isClient
+        ? `<textarea id="siteinfo-input" rows="3" style="margin-top:6px" placeholder="請填寫地址、聯絡人、電話...">${c.siteInfo||''}</textarea>
+           <button class="btn btn-sm btn-primary mt8" onclick="saveSiteInfo('${c.id}')">儲存案場資訊</button>`
+        : `<p style="margin-top:4px;white-space:pre-wrap;font-size:14px">${c.siteInfo||'<span style="color:var(--muted)">（客人尚未填寫）</span>'}</p>`
+      }
+    </div>
+  </div>`;
+
+  // Current progress (readonly display)
+  const mappingsHtml=(c.progress.serialMappings||[]).map(m=>`
+    <div class="flex gap8 items-c" style="margin-bottom:6px;font-size:13px">
+      <div style="flex:1;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">${m.old}</div>
+      <span style="color:var(--muted)">→</span>
+      <div style="flex:1;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">${m.nw||'<span style="color:var(--muted)">（未填）</span>'}</div>
+    </div>`).join('');
+
+  const photosHtml=detailPhotos.length?`<div class="mt12">
+    <label style="font-size:11px;color:var(--muted);font-weight:600">完工照片</label>
+    <div class="photo-grid">${detailPhotos.map(p=>`<img src="${p.dataUrl}" class="ph-thumb" onclick="openLb('${p.dataUrl}')">`).join('')}</div>
+  </div>`:'';
+
+  h+=`<div class="card">
+    <div class="card-title">施工進度（目前）</div>
+    <div class="info-grid">
+      <div class="info-item"><label>預計施作時間</label><p>${fdt(c.progress.estimatedTime)}</p></div>
+      <div class="info-item"><label>完工時間</label><p>${fdt(c.progress.completionTime)}</p></div>
+    </div>
+    <div class="mt8"><label style="font-size:11px;color:var(--muted);font-weight:600">施工備注</label><p style="margin-top:4px;white-space:pre-wrap;font-size:14px">${c.progress.notes||'-'}</p></div>
+    ${c.progress.serialMappings&&c.progress.serialMappings.length?`<div class="mt12"><label style="font-size:11px;color:var(--muted);font-weight:600">序號對照</label><div class="mt8">${mappingsHtml}</div></div>`:''}
+    ${photosHtml}
+  </div>`;
+
+  // Admin sign supplementary
+  if(isAdmin&&c.isSupp&&!c.signedBy) {
+    h+=`<div class="card" style="border:2px solid var(--purple)">
+      <div class="card-title" style="color:var(--purple)">後補派工補簽</div>
+      <p class="muted">此案件為工班後補建立，請確認後補簽。</p>
+      <button class="btn btn-purple mt12" onclick="signSupp('${c.id}')">✓ 補簽確認</button>
+    </div>`;
+  }
+
+  // Edit section
+  if(canEdit) {
+    const smHtml=(c.progress.serialMappings||[]).map((m,i)=>`
+      <div class="s-row" data-i="${i}" draggable="false">
+        <div class="s-old">${m.old}</div>
+        <span class="drag-h" title="拖曳排序">⠿</span>
+        <input type="text" class="nw-inp" data-i="${i}" value="${m.nw}" placeholder="新序號" style="flex:1">
+        <button class="btn btn-sm btn-outline" style="padding:6px 9px" onclick="rmSerialRow(this)">✕</button>
+      </div>`).join('');
+
+    h+=`<div class="card">
+      <div class="card-title">更新進度</div>
+      <div id="chip-area" style="display:none"></div>
+      ${c.oldSerials&&c.oldSerials.length?`<div class="form-group">
+        <label>序號對照表</label>
+        <div id="sm-list" class="mt8">${smHtml}</div>
+        <button class="btn btn-sm btn-outline mt8" onclick="addSerialRow()">＋ 新增一組</button>
+      </div>`:''}
+      <div class="row2">
+        <div class="form-group"><label>預計施作時間</label><input type="datetime-local" id="dt-est" value="${c.progress.estimatedTime||''}"></div>
+        <div class="form-group"><label>完工時間</label><input type="datetime-local" id="dt-cmp" value="${c.progress.completionTime||''}"></div>
+      </div>
+      <div class="form-group"><label>施工備注</label><textarea id="dt-notes" rows="3">${c.progress.notes||''}</textarea></div>
+      <div class="form-group">
+        <label>上傳完工照片 <span class="muted">（自動 AI 辨識序號）</span></label>
+        <div class="upload-box" onclick="$('dt-photo-in').click()">
+          點擊選擇照片
+          <input type="file" id="dt-photo-in" accept="image/*" multiple style="display:none" onchange="handleDetailPhotos(event)">
+        </div>
+        <div id="dt-photo-grid" class="photo-grid"></div>
+      </div>
+      <div class="flex gap8 mt16 wrap">
+        <button class="btn btn-primary" onclick="saveProgress()">儲存進度</button>
+        <button class="btn btn-success" onclick="markComplete()">標記完工</button>
+        ${isAdmin?`<button class="btn btn-danger" onclick="returnCase()">退回</button>`:''}
+      </div>
+    </div>`;
+  }
+
+  $('detail-body').innerHTML=h;
+  showSec('detail');
+  initDrag();
+  renderDetailPhotos();
+}
+
+function rmSerialRow(btn) {
+  btn.closest('.s-row').remove();
+}
+function addSerialRow() {
+  const list=$('sm-list');
+  if(!list) return;
+  const i=list.children.length;
+  const d=document.createElement('div');
+  d.className='s-row'; d.dataset.i=i; d.draggable=false;
+  d.innerHTML=`<div class="s-old" style="color:var(--muted);font-style:italic">（新增）</div>
+    <span class="drag-h">⠿</span>
+    <input type="text" class="nw-inp" data-i="${i}" placeholder="新序號" style="flex:1">
+    <button class="btn btn-sm btn-outline" style="padding:6px 9px" onclick="rmSerialRow(this)">✕</button>`;
+  list.appendChild(d);
+  initDrag();
+}
+function getSerialMappings() {
+  const rows=document.querySelectorAll('#sm-list .s-row');
+  return [...rows].map(r=>({
+    old:r.querySelector('.s-old').textContent.trim(),
+    nw:r.querySelector('.nw-inp').value.trim()
+  }));
+}
+function initDrag() {
+  const list=$('sm-list');
+  if(!list) return;
+  let src=null;
+  list.querySelectorAll('.s-row').forEach(row=>{
+    const h=row.querySelector('.drag-h');
+    if(!h) return;
+    h.onmousedown=()=>{ row.draggable=true; };
+    row.ondragstart=e=>{ src=row; e.dataTransfer.effectAllowed='move'; row.classList.add('dragging'); };
+    row.ondragend=()=>{ row.draggable=false; row.classList.remove('dragging'); src=null; };
+    row.ondragover=e=>{ e.preventDefault(); };
+    row.ondrop=e=>{ e.preventDefault();
+      if(src&&src!==row){
+        const a=src.querySelector('.nw-inp'), b=row.querySelector('.nw-inp');
+        if(a&&b){const t=a.value;a.value=b.value;b.value=t;}
+      }
+    };
+  });
+}
+
+// ── PHOTO & AI ────────────────────────────────────────────────
+async function handleDetailPhotos(ev) {
+  for(const f of [...ev.target.files]) {
+    await new Promise(res=>{
+      const r=new FileReader();
+      r.onload=e=>{
+        const du=e.target.result;
+        detailPhotos.push({name:f.name,dataUrl:du});
+        renderDetailPhotos();
+        res();
+      };
+      r.readAsDataURL(f);
+    });
+    // 顯示辨識中狀態
+    setChipStatus('loading', '🔍 辨識序號中…');
+    analyzePhoto(f).then(serials=>{
+      if(serials.length) showChips(serials);
+      else setChipStatus('warn', '⚠️ 未辨識到序號，請手動輸入。');
+    }).catch(e=>{
+      setChipStatus('warn', '⚠️ 辨識錯誤：' + e.message);
+    });
+  }
+}
+
+// ── OCR：jsQR + Tesseract（影像前處理）+ Anthropic 強化 ──────
+
+// 建立灰階+對比強化的 canvas，提升 OCR 命中率
+function preprocessCanvas(bitmap) {
+  const MAX = 1600;
+  let w = bitmap.width, h = bitmap.height;
+  if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  for(let i = 0; i < d.length; i += 4) {
+    // 灰階
+    const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+    // 對比強化：拉高明暗差距
+    const v = Math.min(255, Math.max(0, (gray - 128) * 1.8 + 128));
+    d[i] = d[i+1] = d[i+2] = v;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return { canvas, ctx, imgData };
+}
+
+// 序號正則：允許數字開頭，含至少一個數字，長度 4–30
+const SERIAL_RE = /[A-Z0-9][A-Z0-9\-_./]{2,28}[A-Z0-9]/gi;
+function extractSerials(text) {
+  const matches = text.match(SERIAL_RE) || [];
+  return matches.filter(s => /\d/.test(s) && s.length >= 4);
+}
+
+async function analyzePhoto(file) {
+  const results = new Set();
+  const bitmap = await createImageBitmap(file).catch(()=>null);
+  if(!bitmap) return [];
+
+  const { canvas, ctx, imgData } = preprocessCanvas(bitmap);
+
+  // 1. jsQR — 原圖先掃，再掃強化圖
+  try {
+    if(typeof jsQR !== 'undefined') {
+      // 原圖
+      const orig = document.createElement('canvas');
+      orig.width = bitmap.width; orig.height = bitmap.height;
+      orig.getContext('2d').drawImage(bitmap, 0, 0);
+      const origData = orig.getContext('2d').getImageData(0, 0, orig.width, orig.height);
+      const qr1 = jsQR(origData.data, orig.width, orig.height);
+      if(qr1?.data) qr1.data.split(/[\s,;\n]+/).forEach(s=>{ s=s.trim(); if(s.length>=4) results.add(s); });
+      // 強化圖
+      const qr2 = jsQR(imgData.data, canvas.width, canvas.height);
+      if(qr2?.data) qr2.data.split(/[\s,;\n]+/).forEach(s=>{ s=s.trim(); if(s.length>=4) results.add(s); });
+    }
+  } catch(e){ console.warn('jsQR:', e); }
+
+  // 2. Tesseract — 用強化後的 canvas blob
+  try {
+    if(typeof Tesseract !== 'undefined') {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      const { data: { text } } = await Tesseract.recognize(blob, 'eng', { logger: ()=>{} });
+      extractSerials(text).forEach(s => results.add(s.toUpperCase()));
+    }
+  } catch(e){ console.warn('Tesseract:', e); }
+
+  // 3. Anthropic Vision — 選填，對手寫/模糊/複雜背景最準
+  const key = safeLS('get','anthropic_api_key');
+  if(key) {
+    try {
+      const b64 = await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=e=>res(e.target.result.split(',')[1]);
+        r.onerror=rej; r.readAsDataURL(file);
+      });
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':key,
+          'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:512,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64}},
+            {type:'text',text:'找出圖片中所有序號/編號，包含QR Code旁的印刷文字、手寫數字、銘牌上的編號。只列出編號，每行一個，例如「01910692C-BE」。若無則回覆「無」。'}
+          ]}]})
+      });
+      if(resp.ok){
+        const data=await resp.json();
+        const txt=data.content?.[0]?.text||'';
+        txt.split('\n').map(s=>s.trim()).filter(s=>s&&s!=='無'&&s.length>=4).forEach(s=>results.add(s));
+      }
+    } catch(e){ console.warn('Anthropic Vision:', e); }
+  }
+
+  return [...results];
+}
+
+// 客人儲存案場資訊
+function saveSiteInfo(cid) {
+  const c=cases.find(x=>x.id===cid); if(!c) return;
+  const val=document.getElementById('siteinfo-input')?.value?.trim()||'';
+  c.siteInfo=val;
+  alert('案場資訊已儲存！');
+}
+
+function renderDetailPhotos() {
+  const grid = $('dt-photo-grid');
+  if(!grid) return;
+  grid.innerHTML = detailPhotos.map((p,i)=>`
+    <div class="ph-wrap">
+      <img src="${p.dataUrl}" class="ph-thumb" onclick="openLb('${p.dataUrl}')">
+      <button class="ph-del" onclick="deletePhoto(${i})" title="刪除">✕</button>
+    </div>`).join('');
+}
+
+function deletePhoto(i) {
+  detailPhotos.splice(i, 1);
+  renderDetailPhotos();
+}
+
+function setChipStatus(type, msg) {
+  const area = $('chip-area');
+  if(!area) return;
+  const styles = {
+    loading: 'background:#dbeafe;border:1px solid #93c5fd;color:#1e40af',
+    ok:      'background:#d1fae5;border:1px solid #6ee7b7;color:#065f46',
+    warn:    'background:#fef3c7;border:1px solid #fde68a;color:#92400e'
+  };
+  area.style.cssText = `display:block;border-radius:7px;padding:8px 12px;font-size:13px;margin-bottom:10px;${styles[type]||styles.warn}`;
+  area.innerHTML = msg;
+}
+
+function showChips(serials) {
+  // 去重、累加（多張照片合併）
+  serials.forEach(s=>{ if(!chips.includes(s)) chips.push(s); });
+  renderChips();
+}
+
+function renderChips() {
+  const area = $('chip-area');
+  if(!area) return;
+  if(!chips.length) { area.style.display='none'; return; }
+  area.style.cssText = 'display:block;border:1px solid #93c5fd;background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px';
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:12px;color:#1e40af;font-weight:600">🔍 辨識到 ${chips.length} 筆，點擊填入，× 移除雜訊：</span>
+      <button class="btn btn-sm btn-outline" onclick="reRunOCR()" style="font-size:11px;padding:3px 9px">↺ 重新辨識</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${chips.map((c,i)=>`
+        <span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #3b82f6;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;font-family:monospace"
+              onclick="pickChip('${c.replace(/'/g,"\\'")}')" title="點擊填入">
+          ${c}
+          <span onclick="event.stopPropagation();rmChip(${i})"
+                style="color:#94a3b8;font-size:15px;line-height:1;margin-left:2px;cursor:pointer">&times;</span>
+        </span>`).join('')}
+    </div>`;
+}
+
+function pickChip(val) {
+  const inputs = [...document.querySelectorAll('.nw-inp')];
+  const empty = inputs.find(i => !i.value.trim());
+  const fill = inp => {
+    inp.value = val;
+    inp.focus();
+    inp.style.borderColor = 'var(--success)';
+    setTimeout(()=>inp.style.borderColor='', 800);
+    // 用完即消失
+    chips.splice(chips.indexOf(val), 1);
+    renderChips();
+  };
+  if(empty) {
+    fill(empty);
+  } else {
+    addSerialRow();
+    setTimeout(()=>{
+      const all = [...document.querySelectorAll('.nw-inp')];
+      fill(all[all.length-1]);
+    }, 60);
+  }
+}
+
+function rmChip(i) { chips.splice(i,1); renderChips(); }
+
+function reRunOCR() {
+  if(!detailPhotos.length){ alert('尚未上傳照片'); return; }
+  chips = [];
+  setChipStatus('loading','🔍 重新辨識中…');
+  const promises = detailPhotos.map(p =>
+    fetch(p.dataUrl).then(r=>r.blob()).then(blob=>analyzePhoto(blob))
+  );
+  Promise.all(promises).then(results=>{
+    const all = results.flat();
+    if(all.length) showChips(all);
+    else setChipStatus('warn','⚠️ 未辨識到序號，請手動輸入。');
+  }).catch(e=>setChipStatus('warn','⚠️ 辨識錯誤：'+e.message));
+}
+
+// ── PROGRESS ACTIONS ──────────────────────────────────────────
+function saveProgress() {
+  const c=cases.find(x=>x.id===currentDetailId); if(!c) return;
+  const est=$('dt-est').value, cmp=$('dt-cmp').value, notes=$('dt-notes').value;
+  const prev=c.progress.estimatedTime;
+  c.progress.estimatedTime=est;
+  c.progress.completionTime=cmp;
+  c.progress.notes=notes;
+  if($('sm-list')) c.progress.serialMappings=getSerialMappings();
+  c.progress.photos=detailPhotos.slice();
+  if(c.status==='已指派工班') c.status='施工中';
+  if(est&&est!==prev) {
+    const v=vendors.find(x=>x.id===c.visibleVendor);
+    if(v) clientsByVendor(v.name).forEach(cl=>
+      sendEmail(cl.email,cl.name,`派工更新：${c.caseNo}`,`案件 ${c.caseNo}（${c.siteName}）預計施作時間更新為 ${fdt(est)}。`));
+  }
+  alert('進度已儲存！'); openDetail(currentDetailId);
+}
+function markComplete() {
+  const c=cases.find(x=>x.id===currentDetailId); if(!c) return;
+  const cmp=$('dt-cmp').value;
+  if(!cmp){alert('請填寫完工時間');return;}
+  c.progress.estimatedTime=$('dt-est').value;
+  c.progress.completionTime=cmp;
+  c.progress.notes=$('dt-notes').value;
+  if($('sm-list')) c.progress.serialMappings=getSerialMappings();
+  c.progress.photos=detailPhotos.slice();
+  c.status='已完工';
+  const v=vendors.find(x=>x.id===c.visibleVendor);
+  if(v) clientsByVendor(v.name).forEach(cl=>
+    sendEmail(cl.email,cl.name,`完工通知：${c.caseNo}`,`案件 ${c.caseNo}（${c.siteName}）已於 ${fdt(cmp)} 完工。`));
+  alert('案件已標記完工！'); openDetail(currentDetailId);
+}
+function returnCase() {
+  if(!confirm('確定要退回此案件？')) return;
+  const c=cases.find(x=>x.id===currentDetailId); if(!c) return;
+  c.status='已退回'; alert('案件已退回'); openDetail(currentDetailId);
+}
+function signSupp(cid) {
+  const c=cases.find(x=>x.id===cid); if(!c) return;
+  c.signedBy=cu.id;
+  const w=users.find(u=>u.id===c.assignedWorker);
+  if(w) sendEmail(w.email,w.name,`後補補簽確認：${c.caseNo}`,`您的後補案件 ${c.caseNo} 已由管理員 ${cu.name} 補簽確認。`);
+  alert('補簽完成！'); openDetail(cid);
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────
+function renderAdmin() { renderVendors(); renderAccounts(); }
+function renderVendors() {
+  $('vendor-body').innerHTML=vendors.map(v=>`<tr>
+    <td>${v.name}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="delVendor('${v.id}')">刪除</button></td>
+  </tr>`).join('');
+}
+function addVendor() {
+  const n=prompt('請輸入廠商名稱：'); if(!n||!n.trim()) return;
+  if(vendors.find(v=>v.name===n.trim())){alert('廠商名稱已存在');return;}
+  vendors.push({id:gid(),name:n.trim()}); renderVendors();
+}
+function delVendor(id) {
+  if(!confirm('確定刪除？')) return;
+  vendors=vendors.filter(v=>v.id!==id); renderVendors();
+}
+function renderAccounts() {
+  $('account-body').innerHTML=users.map(u=>`<tr>
+    <td>${u.name}</td><td>${u.email}</td>
+    <td><span class="badge b-${u.role}">${roleLabel(u.role)}</span></td>
+    <td>${u.company}</td>
+    <td>${u.role!=='admin'?`<button class="btn btn-sm ${u.role==='worker'?'btn-outline':'btn-success'}" onclick="toggleRole('${u.id}')">
+      ${u.role==='worker'?'改為客人':'升為工班'}</button>`:'—'}</td>
+  </tr>`).join('');
+}
+function toggleRole(uid) {
+  const u=users.find(x=>x.id===uid); if(!u||u.role==='admin') return;
+  u.role=u.role==='worker'?'client':'worker'; renderAccounts();
+}
+
+// ── EXPORT ────────────────────────────────────────────────────
+function openExportModal(){ $('export-modal').classList.add('open'); }
+function closeExportModal(){ $('export-modal').classList.remove('open'); }
+function doExport() {
+  const s=$('ex-start').value, e=$('ex-end').value;
+  const statuses=[...$('export-modal').querySelectorAll('.ex-status:checked')].map(c=>c.value);
+  let data=visibleCases().filter(c=>{
+    if(!statuses.includes(c.status)) return false;
+    if(s&&c.date<s) return false;
+    if(e&&c.date>e) return false;
+    return true;
+  });
+  const hdrs=['CASE編號','案場','舊序號','新序號','派工日期','作業內容','聯絡資訊','派工人','可見廠商','狀態','指派工班','工班公司','預計施作時間','完工時間','施工備注','照片數'];
+  const rows=[hdrs];
+  data.forEach(c=>{
+    const maps=c.progress.serialMappings||[];
+    const w=users.find(u=>u.id===c.assignedWorker);
+    const base=[c.caseNo,c.siteName,'','',c.date,c.content,c.siteInfo,
+      cu.name,vendorName(c.visibleVendor),c.status,userName(c.assignedWorker),
+      w?.company||'',fdt(c.progress.estimatedTime),fdt(c.progress.completionTime),
+      c.progress.notes,c.progress.photos?.length||0];
+    if(!maps.length){rows.push(base);}
+    else maps.forEach(m=>{
+      const r=[...base]; r[3]=m.old; r[4]=m.nw; rows.push(r);
+    });
+  });
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download=`solaredge_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  closeExportModal();
+}
+
+// ── EMAIL ─────────────────────────────────────────────────────
+async function sendEmail(to,name,subject,msg) {
+  try {
+    if(typeof emailjs==='undefined') return;
+    await emailjs.send('service_l1mn2n8','template_sjtoluo',{
+      to_email:to,to_name:name,subject,message:msg
+    });
+  } catch(e){ console.warn('Email failed:',e); }
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────
+function openLb(src){ $('lb-img').src=src; $('lb').classList.add('open'); }
+function closeLb(){ $('lb').classList.remove('open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLb(); });
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{ fillVendorSel('rg-vendor'); });
+</script>
+</body>
+</html>
